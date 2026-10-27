@@ -3,6 +3,7 @@ import { MODULE_2_REST_HOLIDAYS_13TH } from './module2RestHolidays13th';
 import { MODULE_3_WAGES } from './module3Wages';
 import { MODULE_4_SPECIAL_GROUPS } from './module4SpecialGroups';
 import { MODULE_5_PROTECTIVE_LAWS } from './module5ProtectiveLaws';
+import { MODULE_6_LEAVES } from './module6Leaves';
 import { REGIONAL_MINIMUM_WAGES, KASAMBAHAY_MINIMUM_WAGES } from './regionalWages';
 import { LABOR_BENEFITS_MULTIPLIER_LIST } from './multiplierTable';
 import { FLASHCARDS_DATA } from './flashcardsData';
@@ -76,6 +77,17 @@ export const WORLDS_METADATA: WorldMeta[] = [
     description: 'Breastfeeding Act (R.A. 10028), R.A. 7192, Magna Carta (R.A. 9710), Sexual Harassment (R.A. 7877), Safe Spaces Act (R.A. 11313), Anti-VAWC (R.A. 9262), SPES & Telecommuting',
     itemCount: MODULE_5_PROTECTIVE_LAWS.length,
   },
+  {
+    id: 'world6',
+    worldNumber: 6,
+    title: 'WORLD 6: STATUTORY LEAVES & WELFARE',
+    shortTitle: 'Statutory Leaves',
+    themeColor: '#db2777', // Princess Peach Pink
+    accentBg: 'bg-pink-600',
+    iconType: 'crown',
+    description: 'Service Incentive Leave (Art. 95), 105-Day Maternity Leave (R.A. 11210), Paternity Leave (R.A. 8187), Solo Parents Welfare (R.A. 11861), Gynecological Leave (R.A. 9710), and VAWC Leave (R.A. 9262)',
+    itemCount: MODULE_6_LEAVES.length,
+  },
 ];
 
 export const ALL_LAW_TOPICS: LawTopic[] = [
@@ -84,6 +96,7 @@ export const ALL_LAW_TOPICS: LawTopic[] = [
   ...MODULE_3_WAGES,
   ...MODULE_4_SPECIAL_GROUPS,
   ...MODULE_5_PROTECTIVE_LAWS,
+  ...MODULE_6_LEAVES,
 ];
 
 export {
@@ -92,6 +105,7 @@ export {
   MODULE_3_WAGES,
   MODULE_4_SPECIAL_GROUPS,
   MODULE_5_PROTECTIVE_LAWS,
+  MODULE_6_LEAVES,
   REGIONAL_MINIMUM_WAGES,
   KASAMBAHAY_MINIMUM_WAGES,
   LABOR_BENEFITS_MULTIPLIER_LIST,

@@ -4,6 +4,7 @@ export type WorldId =
   | 'world3'
   | 'world4'
   | 'world5'
+  | 'world6'
   | 'holidays'
   | 'warp_calc'
   | 'flashcards'
@@ -61,6 +62,14 @@ export type ShopCategory =
   | 'title'
   | 'certificate';
 
+export type SoundPackId =
+  | 'sound_default'
+  | 'sound_nes_8bit'
+  | 'sound_snes_16bit'
+  | 'sound_zen_lofi'
+  | 'sound_galaxy_synth'
+  | 'sound_bowser_metal';
+
 export interface ShopItem {
   id: string;
   name: string;
@@ -70,6 +79,7 @@ export interface ShopItem {
   previewColor?: string;
   avatarId?: MarioAvatar;
   themeId?: MarioTheme;
+  soundPackId?: SoundPackId;
   faction?: string;
   badge?: string;
   perkEffect?: string;

@@ -4,6 +4,9 @@ import { HERO_ROSTER, getHeroMeta } from '../data/heroesData';
 import { LaborKart } from './LaborKart';
 import { Game2D } from './Game2D';
 import { Game3D } from './Game3D';
+import { CourtroomBossBattle } from './CourtroomBossBattle';
+import { WarpPipeSorter } from './WarpPipeSorter';
+import { LawCatcherGame } from './LawCatcherGame';
 import {
   WhackAGoombaGame,
   MultiplierMemoryGame,
@@ -17,6 +20,8 @@ import {
   MarioQuestionBlockIcon,
   MarioStarIcon,
   MarioAxeIcon,
+  MarioBowserIcon,
+  MarioPipeIcon,
 } from './MarioIcons';
 import { marioAudio } from '../utils/audio';
 import {
@@ -28,6 +33,8 @@ import {
   Layers,
   Box,
   Users,
+  Scale,
+  Flame,
 } from 'lucide-react';
 
 interface GameVaultProps {
@@ -39,6 +46,9 @@ interface GameVaultProps {
 }
 
 export type VaultGameId =
+  | 'courtroom'
+  | 'pipe_sorter'
+  | 'catcher'
   | 'kart'
   | 'run2d'
   | 'island3d'
@@ -53,7 +63,7 @@ export const GameVault: React.FC<GameVaultProps> = ({
   setEquippedAvatar,
   setCoins,
 }) => {
-  const [activeGame, setActiveGame] = useState<VaultGameId>('island3d');
+  const [activeGame, setActiveGame] = useState<VaultGameId>('courtroom');
   const [showHeroPicker, setShowHeroPicker] = useState(false);
 
   const heroMeta = getHeroMeta(equippedAvatar);
@@ -72,28 +82,52 @@ export const GameVault: React.FC<GameVaultProps> = ({
     icon: React.ReactNode;
   }[] = [
     {
-      id: 'island3d',
-      title: '3D Mario Coin Island',
-      genre: '3D Spatial Platformer',
-      desc: 'Explore the 3D Mushroom Kingdom island with solid AABB pipe/block collisions, stepping stones, and Castle keep!',
-      badge: '3D COLLISIONS',
-      icon: <Box className="w-6 h-6 text-indigo-600" />,
+      id: 'courtroom',
+      title: 'Courtroom Boss Battle',
+      genre: 'Turn-Based Mario RPG',
+      desc: 'Battle Employer Bowser in court! Counter illegal overtime, pregnancy dismissals, and deductions with statutory legal motions!',
+      badge: 'BOSS RPG',
+      icon: <Scale className="w-6 h-6 text-red-600" />,
+    },
+    {
+      id: 'pipe_sorter',
+      title: 'Warp Pipe Labor Sorter',
+      genre: 'Speed Classification Arcade',
+      desc: 'Flick incoming employment tickets into Green Pipe (Covered / Mandatory) or Red Pipe (Exempt / Prohibited) against the clock!',
+      badge: 'SPEED CLASSIFIER',
+      icon: <MarioPipeIcon className="w-6 h-6" />,
+    },
+    {
+      id: 'catcher',
+      title: 'Super Mario Law Catcher',
+      genre: 'Sky Drop Arcade',
+      desc: 'Catch 13th month coins, 105-day leave mushrooms, and service charge stars while dodging unfair labor practice Thwomps!',
+      badge: 'SKY CATCH',
+      icon: <MarioStarIcon className="w-6 h-6" />,
     },
     {
       id: 'kart',
       title: 'Labor Kart GP',
       genre: 'Retro Mode-7 Racer',
-      desc: 'Race 3 laps on Mushroom Circuit and hit [?] Item Boxes for Labor Law turbo boosts!',
+      desc: 'Race 3 laps on Mushroom Circuit with customizable 50cc/100cc/150cc engine classes, green shells, stars, and turbo boosts!',
       badge: 'KART RACER',
       icon: <MarioStarIcon className="w-6 h-6" />,
     },
     {
       id: 'run2d',
       title: 'Super Mario Legal Run',
-      genre: '2D Side-Scroller',
-      desc: 'Stomp Goombas, jump warp pipes, and bonk [?] blocks to unlock statutory doctrines!',
+      genre: '2D Side-Scroller Platformer',
+      desc: 'Stomp Goombas, kick Koopa shells, grab Fire Flowers to throw statutory fireballs, and reach the flagpole finish!',
       badge: '2D RUNNER',
       icon: <MarioMushroomIcon className="w-6 h-6" />,
+    },
+    {
+      id: 'island3d',
+      title: '3D Mario Coin Island',
+      genre: '3D Spatial Platformer',
+      desc: 'Explore the 3D Mushroom Kingdom island with solid AABB pipe/block collisions, stepping stones, and Castle keep!',
+      badge: '3D COLLISIONS',
+      icon: <Box className="w-6 h-6 text-indigo-600" />,
     },
     {
       id: 'whack',
@@ -277,6 +311,15 @@ export const GameVault: React.FC<GameVaultProps> = ({
 
       {/* Active Game Surface */}
       <div>
+        {activeGame === 'courtroom' && (
+          <CourtroomBossBattle equippedAvatar={equippedAvatar} onEarnCoins={handleEarnCoins} />
+        )}
+        {activeGame === 'pipe_sorter' && (
+          <WarpPipeSorter equippedAvatar={equippedAvatar} onEarnCoins={handleEarnCoins} />
+        )}
+        {activeGame === 'catcher' && (
+          <LawCatcherGame equippedAvatar={equippedAvatar} onEarnCoins={handleEarnCoins} />
+        )}
         {activeGame === 'kart' && (
           <LaborKart equippedAvatar={equippedAvatar} onEarnCoins={handleEarnCoins} />
         )}

@@ -31,6 +31,9 @@ import {
   formatStudyDuration,
   getWeeklyPomodoroChartData,
   WeeklyPomodoroDayData,
+  readStoredDailyStudyGoal,
+  saveStoredDailyStudyGoal,
+  computeDailyStudyGoalStatus,
 } from '../utils/profileAchievements';
 import { marioAudio } from '../utils/audio';
 import {
@@ -81,6 +84,14 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   const [isEditingName, setIsEditingName] = useState(false);
   const [nameInput, setNameInput] = useState(stats.playerName);
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
+  const [dailyGoalTarget, setDailyGoalTarget] = useState<number>(() => readStoredDailyStudyGoal());
+  const goalStatus = computeDailyStudyGoalStatus(stats, dailyGoalTarget);
+
+  const handleSelectGoalMinutes = (mins: number) => {
+    setDailyGoalTarget(mins);
+    saveStoredDailyStudyGoal(mins);
+    marioAudio.playCoin();
+  };
 
   useEffect(() => {
     if (!isOpen) return;
@@ -406,6 +417,80 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                   {unlockedCount}/{achievements.length} Badges
                 </span>
               </div>
+            </div>
+          </div>
+
+          {/* Section 1.5: Daily Study Goal Tracker */}
+          <div
+            data-testid="daily-study-goal-section"
+            className="bg-slate-900 rounded-2xl p-4 sm:p-5 border-2 border-slate-700 space-y-3.5"
+          >
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-amber-400 border-2 border-black flex items-center justify-center text-slate-950 shadow-[0_2px_0_#000] shrink-0">
+                  <Flame className="w-5 h-5 text-slate-950" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-black uppercase text-amber-400 font-mario block">
+                    DAILY COMMITMENT
+                  </span>
+                  <h3 className="text-base sm:text-lg font-black text-white font-display">
+                    DAILY STUDY GOAL TRACKER
+                  </h3>
+                </div>
+              </div>
+
+              {/* Goal Presets */}
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {[15, 25, 45, 60].map((mins) => (
+                  <button
+                    key={mins}
+                    type="button"
+                    onClick={() => handleSelectGoalMinutes(mins)}
+                    className={`h-8 px-2.5 rounded-xl font-black text-xs border transition-all cursor-pointer ${
+                      dailyGoalTarget === mins
+                        ? 'bg-amber-400 text-slate-950 border-black shadow-[0_2px_0_#000]'
+                        : 'bg-slate-800 text-slate-300 border-slate-700 hover:text-white'
+                    }`}
+                  >
+                    {mins}m
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Progress Bar & Status */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs font-bold text-slate-200">
+                <span className="flex items-center gap-1.5">
+                  <span>Target: {dailyGoalTarget} minutes today</span>
+                  {goalStatus.isGoalAchieved && (
+                    <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-emerald-500 text-slate-950 font-mario">
+                      ★ GOAL MET!
+                    </span>
+                  )}
+                </span>
+                <span className="font-mono text-amber-300 tabular-nums font-black text-sm">
+                  {goalStatus.minutesToday}m / {dailyGoalTarget}m ({goalStatus.progressPercent}%)
+                </span>
+              </div>
+
+              <div className="w-full h-4 bg-slate-950 rounded-xl border border-slate-700 overflow-hidden relative p-0.5">
+                <div
+                  className={`h-full rounded-lg transition-all duration-500 ${
+                    goalStatus.isGoalAchieved
+                      ? 'bg-gradient-to-r from-emerald-400 to-green-300'
+                      : 'bg-gradient-to-r from-amber-500 to-amber-300'
+                  }`}
+                  style={{ width: `${goalStatus.progressPercent}%` }}
+                />
+              </div>
+
+              <p className="text-xs text-slate-400">
+                {goalStatus.isGoalAchieved
+                  ? 'Congratulations! You achieved your daily study goal. Interacting with topic audio, flashcards, or quiz questions continues to build your mastery.'
+                  : `${Math.max(0, dailyGoalTarget - goalStatus.minutesToday)} minutes remaining to complete today's goal. Read topic articles, listen to audio, or practice flashcards to advance!`}
+              </p>
             </div>
           </div>
 

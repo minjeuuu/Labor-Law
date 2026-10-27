@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   MarioTheme,
   MarioAvatar,
   ShopItem,
+  SoundPackId,
 } from '../types/laborLaw';
 import { HERO_ROSTER } from '../data/heroesData';
 import {
@@ -34,6 +35,8 @@ import {
   Printer,
   ShieldCheck,
   Check,
+  Play,
+  RotateCcw,
 } from 'lucide-react';
 
 interface ToadShopProps {
@@ -223,6 +226,42 @@ export const PERK_ITEMS: ShopItem[] = [
     badge: 'Focus Boost',
     perkEffect: 'Instant Fanfare & Alertness',
   },
+  {
+    id: 'perk_kart_gold_boost',
+    name: 'Kart Golden Star Overdrive',
+    category: 'perk',
+    price: 35,
+    description: 'Upgrades Labor Kart with enhanced drift mini-turbo sparks and permanent acceleration boost!',
+    badge: 'Kart Turbo',
+    perkEffect: 'Drift Boost Mini-Turbo Overdrive',
+  },
+  {
+    id: 'perk_infinite_jump',
+    name: 'Cape Feather Jump Enhancer',
+    category: 'perk',
+    price: 40,
+    description: 'Super-charges your 2D platformer jump height with variable float aerodynamics!',
+    badge: 'Cape Feather',
+    perkEffect: 'Enhanced 2D Platformer Float',
+  },
+  {
+    id: 'perk_triple_star_coin',
+    name: 'Golden Star Coin Multiplier',
+    category: 'perk',
+    price: 45,
+    description: 'Doubles all bonus coins awarded from World Level-Ups and Arcade Mini-Games!',
+    badge: '2x Level-Up',
+    perkEffect: '2x Bonus Coins across Games',
+  },
+  {
+    id: 'perk_bar_defense_shield',
+    name: 'Bar Exam Second-Chance Shield',
+    category: 'perk',
+    price: 50,
+    description: 'Provides a second chance shield when attempting tough Labor Standards bar scenarios!',
+    badge: 'Exam Shield',
+    perkEffect: 'Protects Quiz Score on Missed Questions',
+  },
 ];
 
 export const PRESTIGE_ITEMS: ShopItem[] = [
@@ -270,28 +309,58 @@ export const PRESTIGE_ITEMS: ShopItem[] = [
 
 export const SOUNDPACK_ITEMS: ShopItem[] = [
   {
+    id: 'sound_default',
+    name: 'Mushroom Kingdom Classic',
+    category: 'soundpack',
+    soundPackId: 'sound_default',
+    price: 0,
+    description: 'Iconic Mario chiptune tones with balanced square waves, crisp coin pings, and playful arpeggios.',
+    badge: 'Classic 8-Bit',
+  },
+  {
     id: 'sound_nes_8bit',
     name: 'NES 8-Bit Chiptune Pack',
     category: 'soundpack',
+    soundPackId: 'sound_nes_8bit',
     price: 30,
     description: 'Crisp square-wave and triangle-wave sound effects inspired by the 1985 NES original.',
-    badge: '8-Bit Synth',
+    badge: 'NES 1985',
   },
   {
     id: 'sound_snes_16bit',
     name: 'SNES 16-Bit Super Chime',
     category: 'soundpack',
+    soundPackId: 'sound_snes_16bit',
     price: 45,
-    description: 'Rich stereo brass, crystal bells, and orchestra hits from the 1990 Super Mario World era.',
+    description: 'Rich stereo brass, crystal bells, dual-voice warmth, and orchestra hits from the 1990 Super Mario World era.',
     badge: '16-Bit Super',
   },
   {
     id: 'sound_zen_lofi',
     name: 'Zen Lofi Study Chimes',
     category: 'soundpack',
+    soundPackId: 'sound_zen_lofi',
     price: 50,
-    description: 'Gentle kalimba tones and warm vinyl crackle for soothing deep-focus Bar review sessions.',
+    description: 'Gentle pure-sine kalimba tones and warm mellow resonance for soothing deep-focus Bar review sessions.',
     badge: 'Zen Study',
+  },
+  {
+    id: 'sound_galaxy_synth',
+    name: 'Cosmic Galaxy Synth Pack',
+    category: 'soundpack',
+    soundPackId: 'sound_galaxy_synth',
+    price: 60,
+    description: 'Ethereal star arpeggios, shimmering space harmonics, and celestial chime cascades.',
+    badge: 'Galaxy 2007',
+  },
+  {
+    id: 'sound_bowser_metal',
+    name: 'Bowser Lava Rock Overdrive',
+    category: 'soundpack',
+    soundPackId: 'sound_bowser_metal',
+    price: 65,
+    description: 'Boiling sawtooth distortion, crunchy sub-bass power, and intense courtroom boss energy.',
+    badge: 'Magma Rock',
   },
 ];
 
@@ -341,8 +410,26 @@ export const ToadShop: React.FC<ToadShopProps> = ({
     return '';
   });
 
+  const [equippedSoundPack, setEquippedSoundPack] = useState<SoundPackId>(() => {
+    return marioAudio.settings.soundPack || 'sound_default';
+  });
+
+  useEffect(() => {
+    return marioAudio.subscribe((s) => {
+      if (s.soundPack) {
+        setEquippedSoundPack(s.soundPack);
+      }
+    });
+  }, []);
+
   const [unlockedItemIds, setUnlockedItemIds] = useState<string[]>(() => {
-    const defaults = ['theme_overworld', 'avatar_mario', 'avatar_luigi', 'avatar_peach'];
+    const defaults = [
+      'theme_overworld',
+      'avatar_mario',
+      'avatar_luigi',
+      'avatar_peach',
+      'sound_default',
+    ];
     if (typeof window !== 'undefined') {
       try {
         const saved = localStorage.getItem('mario_unlocked_items');
@@ -357,6 +444,17 @@ export const ToadShop: React.FC<ToadShopProps> = ({
     }
     return defaults;
   });
+
+  const [restoreMessage, setRestoreMessage] = useState<string | null>(null);
+
+  const handleRestorePurchases = () => {
+    const recovered = marioAudio.restorePurchases();
+    const merged = Array.from(new Set([...unlockedItemIds, ...recovered]));
+    setUnlockedItemIds(merged);
+    marioAudio.playPowerUp();
+    setRestoreMessage('All 6 Synthesized Audio Packs & Content Restored Successfully!');
+    setTimeout(() => setRestoreMessage(null), 3500);
+  };
 
   const handleBuyItem = (item: ShopItem) => {
     if (coins < item.price) {
@@ -392,6 +490,8 @@ export const ToadShop: React.FC<ToadShopProps> = ({
       handleEquipTheme(item.themeId);
     } else if (item.category === 'avatar' && item.avatarId) {
       handleEquipAvatar(item.avatarId);
+    } else if (item.category === 'soundpack' && item.soundPackId) {
+      handleEquipSoundPack(item.soundPackId);
     } else if (item.category === 'title') {
       handleEquipTitle(item.name);
     } else if (item.category === 'certificate') {
@@ -417,6 +517,11 @@ export const ToadShop: React.FC<ToadShopProps> = ({
     } catch {
       // fallback
     }
+  };
+
+  const handleEquipSoundPack = (packId: SoundPackId) => {
+    setEquippedSoundPack(packId);
+    marioAudio.setSoundPack(packId, true);
   };
 
   const handleEquipTitle = (title: string) => {
@@ -1016,64 +1121,146 @@ export const ToadShop: React.FC<ToadShopProps> = ({
       {/* Sound Packs */}
       {activeCategory === 'soundpacks' && (
         <div className="space-y-4">
-          <div className="bg-slate-900 text-white p-4 rounded-2xl border-3 border-black shadow-[3px_3px_0_#000] flex items-center gap-3">
-            <Volume2 className="w-8 h-8 text-amber-400 shrink-0" />
-            <div>
-              <h3 className="font-black text-base uppercase font-display text-amber-300">
-                CHIPTUNE &amp; AUDIO PACKS
-              </h3>
-              <p className="text-xs font-semibold text-slate-300">
-                Enhance your study ambiance with custom retro audio packs designed to keep your mind stimulated during lengthy statutory reading sessions.
-              </p>
+          <div className="bg-slate-900 text-white p-4 sm:p-5 rounded-2xl border-3 border-black shadow-[3px_3px_0_#000] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-xl bg-amber-400 text-slate-950 border-2 border-black flex items-center justify-center shrink-0 shadow-[0_2px_0_#000]">
+                <Volume2 className="w-7 h-7" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-black text-base uppercase font-display text-amber-300">
+                    RETRO AUDIO &amp; CHIPTUNE PACKS
+                  </h3>
+                  <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-emerald-400 text-slate-950 font-mario">
+                    REAL-TIME SYNTH
+                  </span>
+                </div>
+                <p className="text-xs font-semibold text-slate-300 mt-0.5">
+                  Equip distinct synthesized audio timbres for all coins, jumps, pipes, quizzes, and background music across the entire app!
+                </p>
+              </div>
+            </div>
+
+            {/* Right actions: Restore button + Currently Active Soundpack Pill */}
+            <div className="flex flex-wrap items-center gap-2 self-stretch sm:self-auto justify-between sm:justify-end">
+              <button
+                type="button"
+                onClick={handleRestorePurchases}
+                className="h-9 px-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs border-2 border-black shadow-[0_2px_0_#000] inline-flex items-center gap-1.5 cursor-pointer active:translate-y-0.5"
+                title="Restore all unlocked audio packs and store purchases"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Restore Audio Packs</span>
+              </button>
+
+              <div className="bg-slate-950 px-3 py-1.5 rounded-xl border-2 border-amber-400 flex items-center gap-2">
+                <span className="text-[10px] font-black uppercase text-amber-400 font-mario">
+                  ACTIVE:
+                </span>
+                <span className="text-xs font-black text-white">
+                  {SOUNDPACK_ITEMS.find((s) => s.soundPackId === equippedSoundPack)?.name || 'Classic 8-Bit'}
+                </span>
+              </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-stretch">
+          {restoreMessage && (
+            <div className="bg-emerald-500 text-slate-950 p-3 rounded-xl border-2 border-black font-black text-xs flex items-center justify-between shadow-[0_3px_0_#000] animate-bounce">
+              <span className="flex items-center gap-1.5">
+                <Check className="w-4 h-4 stroke-[3]" />
+                <span>{restoreMessage}</span>
+              </span>
+              <button onClick={() => setRestoreMessage(null)} className="cursor-pointer font-mario">
+                ✕
+              </button>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-stretch">
             {SOUNDPACK_ITEMS.map((item) => {
-              const isUnlocked = unlockedItemIds.includes(item.id);
+              const isUnlocked = unlockedItemIds.includes(item.id) || item.price === 0;
+              const isEquipped = equippedSoundPack === item.soundPackId;
 
               return (
                 <div
                   key={item.id}
-                  className="bg-white rounded-2xl mario-card border-4 border-slate-950 p-4 sm:p-5 flex flex-col justify-between h-full"
+                  data-testid={`shop-soundpack-${item.soundPackId}`}
+                  className={`bg-white rounded-2xl mario-card border-4 border-slate-950 p-4 sm:p-5 flex flex-col justify-between h-full transition-all ${
+                    isEquipped ? 'ring-4 ring-amber-400 bg-amber-50/50' : ''
+                  }`}
                 >
                   <div className="space-y-3">
-                    <div className="w-14 h-14 bg-indigo-50 rounded-2xl border-3 border-black mx-auto flex items-center justify-center shadow-[0_3px_0_#000]">
-                      <Volume2 className="w-8 h-8 text-indigo-600" />
-                    </div>
-
-                    <div className="text-center">
-                      <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-900 border border-indigo-300 inline-block mb-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-md bg-indigo-900 text-amber-300 border border-black font-mario">
                         {item.badge}
                       </span>
-                      <h3 className="font-black text-slate-950 text-base font-display">
+                      {isEquipped && (
+                        <span className="text-[9px] font-black uppercase text-emerald-900 bg-emerald-300 px-2.5 py-0.5 rounded-md border border-emerald-600 font-mario flex items-center gap-1 shadow-xs">
+                          <Check className="w-3 h-3 stroke-[3]" />
+                          EQUIPPED
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="w-16 h-16 bg-indigo-100/70 rounded-2xl border-3 border-black mx-auto flex items-center justify-center shadow-[0_3px_0_#000]">
+                      <Volume2 className="w-9 h-9 text-indigo-700" />
+                    </div>
+
+                    <div className="text-center space-y-1">
+                      <h3 className="font-black text-slate-950 text-base sm:text-lg font-display">
                         {item.name}
                       </h3>
-                      <p className="text-xs font-semibold text-slate-600 mt-1 leading-relaxed">
+                      <p className="text-xs font-semibold text-slate-600 leading-relaxed">
                         {item.description}
                       </p>
                     </div>
+
+                    {/* Interactive Sample/Preview Button */}
+                    <button
+                      type="button"
+                      onClick={() => item.soundPackId && marioAudio.previewSoundPack(item.soundPackId)}
+                      aria-label={`Preview sample chime for ${item.name}`}
+                      data-testid={`preview-soundpack-${item.soundPackId}`}
+                      className="w-full py-1.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 border-2 border-slate-700 text-slate-900 font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer active:translate-y-0.5 transition-all"
+                    >
+                      <Play className="w-3.5 h-3.5 text-indigo-700 fill-current" />
+                      <span>Preview Sound Pack</span>
+                    </button>
                   </div>
 
                   <div className="pt-4 border-t-2 border-slate-200 mt-4 flex items-center justify-between gap-2">
                     <div className="inline-flex items-center gap-1.5 font-black text-sm text-slate-950">
                       <MarioCoinIcon className="w-4 h-4 shrink-0" />
-                      <span>{item.price} Coins</span>
+                      <span>{item.price === 0 ? 'Free' : `${item.price} Coins`}</span>
                     </div>
 
-                    {isUnlocked ? (
-                      <span className="h-9 inline-flex items-center justify-center px-3 rounded-xl font-black text-xs bg-emerald-100 text-emerald-950 border-2 border-emerald-500">
-                        Unlocked
-                      </span>
-                    ) : (
-                      <button
-                        onClick={() => handleBuyItem(item)}
-                        disabled={coins < item.price}
-                        className="h-9 inline-flex items-center justify-center px-4 rounded-xl font-black text-xs bg-amber-400 hover:bg-amber-300 disabled:opacity-40 text-slate-950 border-2 border-black shadow-[0_2px_0_#000] active:translate-y-0.5 cursor-pointer"
-                      >
-                        Acquire Pack
-                      </button>
-                    )}
+                    <div className="flex items-center gap-1.5">
+                      {isUnlocked ? (
+                        <button
+                          type="button"
+                          onClick={() => item.soundPackId && handleEquipSoundPack(item.soundPackId)}
+                          disabled={isEquipped}
+                          data-testid={`equip-soundpack-${item.soundPackId}`}
+                          className={`h-9 inline-flex items-center justify-center px-4 rounded-xl font-black text-xs border-2 border-black transition-all cursor-pointer ${
+                            isEquipped
+                              ? 'bg-emerald-500 text-slate-950 cursor-default'
+                              : 'bg-amber-400 hover:bg-amber-300 text-slate-950 shadow-[0_2px_0_#000] active:translate-y-0.5'
+                          }`}
+                        >
+                          {isEquipped ? 'Active' : 'Equip Audio Pack'}
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleBuyItem(item)}
+                          disabled={coins < item.price}
+                          data-testid={`buy-soundpack-${item.soundPackId}`}
+                          className="h-9 inline-flex items-center justify-center px-4 rounded-xl font-black text-xs bg-red-600 hover:bg-red-500 disabled:opacity-40 text-white border-2 border-black shadow-[0_2px_0_#000] active:translate-y-0.5 cursor-pointer"
+                        >
+                          Unlock Pack
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               );
@@ -1185,7 +1372,7 @@ export const ToadShop: React.FC<ToadShopProps> = ({
                 onChange={(e) => setCertRecipientName(e.target.value)}
                 maxLength={40}
                 className="px-3 py-1.5 bg-white border-2 border-black rounded-xl font-bold text-sm text-slate-900 flex-1 min-w-[200px]"
-                placeholder="e.g., Atty. Juan Dela Cruz"
+                placeholder="e.g., Juan Dela Cruz, Bar Candidate"
               />
             </div>
 
@@ -1237,11 +1424,11 @@ export const ToadShop: React.FC<ToadShopProps> = ({
                 </div>
 
                 <div className="text-center">
-                  <div className="w-36 border-b-2 border-black mx-auto mb-1 font-black text-xs">
-                    Chief Arbiter Toad, LL.M.
+                  <div className="w-48 border-b-2 border-black mx-auto mb-1 font-black text-xs">
+                    Matthew · Main Creator &amp; Curator
                   </div>
                   <span className="text-[10px] font-black uppercase text-slate-500 font-mario">
-                    COMMISSIONER OF STANDARDS
+                    MAIN CREATOR &amp; CURATOR
                   </span>
                 </div>
               </div>

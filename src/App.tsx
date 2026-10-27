@@ -72,6 +72,11 @@ import {
   Users,
   Award,
   X,
+  Compass,
+  BookOpen,
+  HelpCircle,
+  Trophy,
+  Gamepad2,
 } from 'lucide-react';
 
 export default function App() {
@@ -225,6 +230,28 @@ export default function App() {
       localStorage.setItem(STUDY_DIFFICULTY_KEY, diff);
     } catch {
       // fallback
+    }
+  };
+
+  // Global Legal Citations Toggle for Bar students
+  const [showLegalCitations, setShowLegalCitationsState] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('mario_legal_citations');
+        return saved !== null ? saved === 'true' : true;
+      } catch {
+        return true;
+      }
+    }
+    return true;
+  });
+
+  const handleSetShowLegalCitations = (show: boolean) => {
+    setShowLegalCitationsState(show);
+    try {
+      localStorage.setItem('mario_legal_citations', String(show));
+    } catch {
+      // ignore
     }
   };
 
@@ -563,11 +590,13 @@ export default function App() {
           onOpenExportProgress={() => setIsExportModalOpen(true)}
           onOpenGlobalSearch={() => setIsGlobalSearchOpen(true)}
           onOpenPrintGuide={() => setIsPrintGuideOpen(true)}
+          showLegalCitations={showLegalCitations}
+          setShowLegalCitations={handleSetShowLegalCitations}
         />
       </div>
 
-      {/* Main Container */}
-      <main className="flex-1 max-w-7xl mx-auto w-full px-3 sm:px-4 pt-4 sm:pt-6 md:pt-8 overflow-x-hidden">
+      {/* Main Container with Mobile Bottom Nav Padding */}
+      <main className="flex-1 max-w-7xl mx-auto w-full px-3 sm:px-4 pt-4 sm:pt-6 md:pt-8 pb-24 lg:pb-8 overflow-x-hidden">
         {/* Tab 0: Super Mario World Overworld Interactive Map */}
         {activeTab === 'map' && (
           <div className="space-y-6">
@@ -609,7 +638,7 @@ export default function App() {
                     <MarioMushroomIcon className="w-6 h-6" />
                   </div>
                   <div className="min-w-0">
-                    <h3 className="font-black text-slate-950 text-sm sm:text-base font-display truncate">All 5 Worlds</h3>
+                    <h3 className="font-black text-slate-950 text-sm sm:text-base font-display truncate">All 6 Worlds</h3>
                     <p className="text-xs font-bold text-slate-600 truncate">Full statutory guide</p>
                   </div>
                 </div>
@@ -701,7 +730,53 @@ export default function App() {
 
         {/* Tab 1: All Unabridged Modules View */}
         {activeTab === 'modules' && (
-          <div className="space-y-5 sm:space-y-7">
+          <div className="space-y-4 sm:space-y-6">
+            {/* Breadcrumb Navigation Trail */}
+            <nav
+              aria-label="Module Breadcrumb Navigation"
+              data-testid="modules-breadcrumb-nav"
+              className="bg-white rounded-2xl border-3 border-slate-950 p-2 sm:p-2.5 shadow-[3px_3px_0_#000] flex items-center gap-1.5 sm:gap-2 flex-wrap text-xs font-black text-slate-800"
+            >
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveWorld('all');
+                  marioAudio.playCoin();
+                }}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
+                  activeWorld === 'all'
+                    ? 'bg-amber-400 text-slate-950 border-2 border-black shadow-[0_1px_0_#000]'
+                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                }`}
+              >
+                <MarioMushroomIcon className="w-3.5 h-3.5 shrink-0" />
+                <span>Labor Standards (All)</span>
+              </button>
+
+              <span className="text-slate-400 font-bold select-none">/</span>
+
+              <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap">
+                {WORLDS_METADATA.map((w) => (
+                  <button
+                    key={w.id}
+                    type="button"
+                    onClick={() => {
+                      setActiveWorld(w.id);
+                      marioAudio.playPipe();
+                    }}
+                    className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs transition-all cursor-pointer ${
+                      activeWorld === w.id
+                        ? 'bg-red-600 text-white border-2 border-black shadow-[0_1px_0_#000] font-black'
+                        : 'bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold'
+                    }`}
+                  >
+                    <span>W{w.worldNumber}:</span>
+                    <span className="truncate max-w-[100px] sm:max-w-none">{w.shortTitle}</span>
+                  </button>
+                ))}
+              </div>
+            </nav>
+
             {/* Visual Progress Bar with Equipped Avatar */}
             <StageProgressBar
               completedCount={completedTopicIds.length}
@@ -758,7 +833,7 @@ export default function App() {
               </div>
 
               {/* World Selector Stage Buttons - Mobile Responsive Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2 sm:gap-2.5">
                 <button
                   onClick={() => handleWorldSelect('all')}
                   className={`p-2.5 sm:p-3 rounded-2xl border-2 sm:border-3 border-black text-left transition-all cursor-pointer ${
@@ -836,6 +911,7 @@ export default function App() {
                     isCompleted={completedTopicIds.includes(topic.id)}
                     onToggleComplete={() => handleToggleTopicComplete(topic.id)}
                     complexityMode={complexityMode}
+                    showLegalCitations={showLegalCitations}
                   />
                 ))}
               </div>
@@ -1107,6 +1183,8 @@ export default function App() {
               <span>Special Groups</span>
               <span>•</span>
               <span>Protective Laws</span>
+              <span>•</span>
+              <span>Statutory Leaves</span>
             </div>
           </div>
 
@@ -1130,6 +1208,43 @@ export default function App() {
           </div>
         </div>
       </footer>
+
+      {/* Ultra Mobile-Friendly Bottom Navigation Bar */}
+      <nav
+        aria-label="Mobile Bottom Navigation"
+        data-testid="mobile-bottom-nav"
+        className="fixed bottom-0 inset-x-0 z-40 bg-slate-950/95 border-t-3 border-amber-400 backdrop-blur-md px-2 py-1.5 flex items-center justify-around gap-1 lg:hidden shadow-[0_-4px_12px_rgba(0,0,0,0.6)] select-none print:hidden"
+      >
+        {[
+          { id: 'map', label: 'Map', icon: <Compass className="w-5 h-5 shrink-0" /> },
+          { id: 'modules', label: 'Modules', icon: <BookOpen className="w-5 h-5 shrink-0" /> },
+          { id: 'flashcards', label: 'Cards', icon: <HelpCircle className="w-5 h-5 shrink-0" /> },
+          { id: 'quiz', label: 'Boss Quest', icon: <Trophy className="w-5 h-5 shrink-0" /> },
+          { id: 'vault', label: 'Arcade', icon: <Gamepad2 className="w-5 h-5 shrink-0" /> },
+        ].map((tab) => {
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => {
+                setActiveTab(tab.id);
+                marioAudio.playTabSwitch();
+              }}
+              className={`flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-xl transition-all cursor-pointer ${
+                isActive
+                  ? 'bg-amber-400 text-slate-950 font-black shadow-[0_2px_0_#000]'
+                  : 'text-slate-300 hover:text-white'
+              }`}
+            >
+              {tab.icon}
+              <span className="text-[10px] font-black uppercase font-mario mt-0.5 leading-none">
+                {tab.label}
+              </span>
+            </button>
+          );
+        })}
+      </nav>
     </div>
   );
 }

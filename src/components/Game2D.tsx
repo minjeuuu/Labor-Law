@@ -141,6 +141,8 @@ export const Game2D: React.FC<Game2DProps> = ({ equippedAvatar = 'mario', onEarn
     let cameraX = 0;
     let localScore = score;
     let localCoins = coins;
+    let coyoteTimer = 0;
+    let jumpBufferTimer = 0;
 
     const gameLoop = (currentTime: number) => {
       const dt = Math.min(32, currentTime - lastTime);
@@ -158,11 +160,31 @@ export const Game2D: React.FC<Game2DProps> = ({ equippedAvatar = 'mario', onEarn
           player.vx = 0;
         }
 
-        // Jump Force
-        if (keysRef.current.jump && player.grounded) {
+        // Coyote Time & Jump Buffering
+        if (player.grounded) {
+          coyoteTimer = 7;
+        } else if (coyoteTimer > 0) {
+          coyoteTimer--;
+        }
+
+        if (keysRef.current.jump) {
+          jumpBufferTimer = 6;
+        } else if (jumpBufferTimer > 0) {
+          jumpBufferTimer--;
+        }
+
+        // Trigger Jump if buffer active and player is grounded (or in coyote window)
+        if (jumpBufferTimer > 0 && (player.grounded || coyoteTimer > 0)) {
           player.vy = player.jumpForce;
           player.grounded = false;
+          coyoteTimer = 0;
+          jumpBufferTimer = 0;
           marioAudio.playJump();
+        }
+
+        // Variable Jump Height Cut: Early release dampens upward velocity
+        if (!keysRef.current.jump && player.vy < -2.5) {
+          player.vy *= 0.52;
         }
 
         // Physics
@@ -600,15 +622,11 @@ export const Game2D: React.FC<Game2DProps> = ({ equippedAvatar = 'mario', onEarn
           </div>
 
           <button
-            onMouseDown={() => {
-              keysRef.current.jump = true;
-              setTimeout(() => (keysRef.current.jump = false), 150);
-            }}
-            onTouchStart={() => {
-              keysRef.current.jump = true;
-              setTimeout(() => (keysRef.current.jump = false), 150);
-            }}
-            className="px-6 py-3 bg-amber-400 text-slate-950 font-black rounded-xl border-3 border-black shadow-[0_3px_0_#000] active:translate-y-0.5 flex items-center gap-1.5 cursor-pointer font-mario text-xs"
+            onMouseDown={() => (keysRef.current.jump = true)}
+            onMouseUp={() => (keysRef.current.jump = false)}
+            onTouchStart={() => (keysRef.current.jump = true)}
+            onTouchEnd={() => (keysRef.current.jump = false)}
+            className="min-h-[48px] px-6 py-3 bg-amber-400 active:bg-amber-300 text-slate-950 font-black rounded-xl border-3 border-black shadow-[0_3px_0_#000] active:translate-y-0.5 flex items-center gap-1.5 cursor-pointer font-mario text-xs"
           >
             <ArrowUp className="w-5 h-5 stroke-[3]" />
             <span>JUMP</span>

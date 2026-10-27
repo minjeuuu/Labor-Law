@@ -201,6 +201,82 @@ export function recordPomodoroFocusFinish(
   };
 }
 
+export const DAILY_STUDY_GOAL_STORAGE_KEY = 'mario_daily_study_goal_minutes_v1';
+export const DEFAULT_DAILY_STUDY_GOAL_MINUTES = 25;
+
+export interface DailyStudyGoalStatus {
+  targetMinutes: number;
+  minutesToday: number;
+  progressPercent: number;
+  isGoalAchieved: boolean;
+}
+
+export function readStoredDailyStudyGoal(storage?: StorageLike | null): number {
+  if (!storage) return DEFAULT_DAILY_STUDY_GOAL_MINUTES;
+  try {
+    const raw = storage.getItem(DAILY_STUDY_GOAL_STORAGE_KEY);
+    const parsed = raw ? parseInt(raw, 10) : NaN;
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : DEFAULT_DAILY_STUDY_GOAL_MINUTES;
+  } catch {
+    return DEFAULT_DAILY_STUDY_GOAL_MINUTES;
+  }
+}
+
+export function saveStoredDailyStudyGoal(
+  targetMinutes: number,
+  storage?: StorageLike | null
+): void {
+  if (!storage) return;
+  try {
+    storage.setItem(DAILY_STUDY_GOAL_STORAGE_KEY, String(targetMinutes));
+  } catch {
+    // ignore
+  }
+}
+
+export function computeDailyStudyGoalStatus(
+  stats: PlayerProfileStats,
+  targetMinutes: number,
+  dateKey: string = getTodayDateKey()
+): DailyStudyGoalStatus {
+  const currentLogs = stats.dailyPomodoroLogs || {};
+  const dayRecord = currentLogs[dateKey];
+  const minutesToday = dayRecord ? dayRecord.minutes : Math.min(targetMinutes, Math.floor((stats.studiedSeconds % 86400) / 60));
+  const progressPercent = Math.min(
+    100,
+    Math.round((minutesToday / Math.max(1, targetMinutes)) * 100)
+  );
+  return {
+    targetMinutes,
+    minutesToday,
+    progressPercent,
+    isGoalAchieved: minutesToday >= targetMinutes,
+  };
+}
+
+export function recordInteractionStudyMinutes(
+  stats: PlayerProfileStats,
+  minutesToAdd: number,
+  dateKey: string = getTodayDateKey()
+): PlayerProfileStats {
+  const safeMinutes = Math.max(1, Math.floor(minutesToAdd));
+  const currentLogs = stats.dailyPomodoroLogs || {};
+  const dayRecord = currentLogs[dateKey] || { sessions: 0, minutes: 0 };
+  const updatedDayRecord: DailyPomodoroRecord = {
+    sessions: dayRecord.sessions,
+    minutes: dayRecord.minutes + safeMinutes,
+  };
+
+  return {
+    ...stats,
+    studiedSeconds: stats.studiedSeconds + safeMinutes * 60,
+    dailyPomodoroLogs: {
+      ...currentLogs,
+      [dateKey]: updatedDayRecord,
+    },
+  };
+}
+
 export interface WeeklyPomodoroDayData {
   dateKey: string;
   dayLabel: string;

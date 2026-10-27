@@ -68,7 +68,7 @@ test('syncDailyLoginStreak detects when today bonus gift is claimed via legacy d
 });
 
 test('pickQuickTestQuestions pulls 5 unique random questions scoped to activeWorld', () => {
-  for (const world of ['world1', 'world2', 'world3', 'world4', 'world5', 'holidays']) {
+  for (const world of ['world1', 'world2', 'world3', 'world4', 'world5', 'world6', 'holidays']) {
     const expectedCode = mapActiveWorldToQuizCode(world);
     const examPick = pickQuickTestQuestions(world, 'exam_prep', 5);
     assert.equal(examPick.length, 5);

@@ -142,6 +142,9 @@ export function mapActiveWorldToQuizCode(
     case 'world5':
     case 'w5':
       return 'w5';
+    case 'world6':
+    case 'w6':
+      return 'w6';
     case 'holidays':
       return 'holidays';
     default:
@@ -166,8 +169,11 @@ export function mapActiveWorldToFlashcardWorldNum(activeWorld: string): number |
     case 'world5':
     case 'w5':
       return 5;
-    case 'holidays':
+    case 'world6':
+    case 'w6':
       return 6;
+    case 'holidays':
+      return 7;
     default:
       return 'all';
   }
@@ -185,10 +191,12 @@ export function getQuizWorldLabel(worldCode: 'all' | QuizQuestion['worldCode']):
       return 'World 4: Special Groups of Employees';
     case 'w5':
       return 'World 5: Protective Labor Laws';
+    case 'w6':
+      return 'World 6: Statutory Leaves & Welfare';
     case 'holidays':
       return 'Philippine Holidays Hub';
     default:
-      return 'All 5 Worlds & Holidays';
+      return 'All 6 Worlds & Holidays';
   }
 }
 
@@ -198,6 +206,7 @@ function mapFlashcardWorldNumToCode(worldNum: number): QuizQuestion['worldCode']
   if (worldNum === 3) return 'w3';
   if (worldNum === 4) return 'w4';
   if (worldNum === 5) return 'w5';
+  if (worldNum === 6) return 'w6';
   return 'holidays';
 }
 
@@ -215,9 +224,7 @@ function hashSeed(input: string): number {
  * (3 straightforward choices + statutory memory hint).
  */
 function buildCasualDefinitionPool(): AdaptedQuizQuestion[] {
-  const eligible = FLASHCARDS_DATA.filter(
-    (fc) => fc.difficulty === 'Easy' || fc.difficulty === 'Medium'
-  );
+  const eligible = FLASHCARDS_DATA;
 
   return eligible.map((card, index) => {
     const worldCode = mapFlashcardWorldNumToCode(card.worldNum);
@@ -278,7 +285,7 @@ export function getQuizQuestionsForDifficulty(
     return filtered.map((q) => ({ ...q, options: [...q.options] }));
   }
 
-  const examSource = [...PRACTICE_QUESTIONS];
+  const examSource = [...PRACTICE_QUESTIONS, ...BOWSER_BOSS_QUESTIONS];
   const filtered =
     worldCode === 'all'
       ? examSource

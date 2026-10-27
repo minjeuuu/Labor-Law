@@ -83,13 +83,13 @@ export const LaborKart: React.FC<LaborKartProps> = ({ equippedAvatar, onEarnCoin
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [gameState, setGameState] = useState<'menu' | 'racing' | 'question' | 'gameover' | 'victory'>('menu');
   const [currentLap, setCurrentLap] = useState<number>(1);
-  const [position, setPosition] = useState<number>(3);
+  const [position, setPosition] = useState<number>(2);
   const [speedMph, setSpeedMph] = useState<number>(0);
   const [activeItem, setActiveItem] = useState<string | null>(null);
   const [activeQuestion, setActiveQuestion] = useState<ItemQuestion | null>(null);
-  const [boostActiveTimer, setBoostActiveTimer] = useState<number>(0);
-  const [spinoutTimer, setSpinoutTimer] = useState<number>(0);
   const [coinsGathered, setCoinsGathered] = useState<number>(0);
+  const [engineClass, setEngineClass] = useState<'50cc' | '100cc' | '150cc'>('100cc');
+  const [inventoryItem, setInventoryItem] = useState<'mushroom' | 'star' | 'greenshell' | 'redshell' | 'banana' | null>('mushroom');
 
   // Keyboard controls
   const keysRef = useRef<{ left: boolean; right: boolean; accel: boolean; brake: boolean }>({
@@ -106,45 +106,101 @@ export const LaborKart: React.FC<LaborKartProps> = ({ equippedAvatar, onEarnCoin
     playerSpeed: number;
     boostRemaining: number;
     spinoutRemaining: number;
+    invincibleRemaining: number;
     lap: number;
     lapLength: number;
-    rivals: KartRival[];
+    rivals: (KartRival & { spinout: number })[];
     itemBoxes: { dist: number; x: number; hit: boolean }[];
     coins: { dist: number; x: number; hit: boolean }[];
     totalCoins: number;
+    shells: { dist: number; x: number; targetBowser?: boolean; homing?: boolean }[];
+    bananas: { dist: number; x: number }[];
   }>({
     playerDist: 0,
     playerX: 0, // -1 (left road edge) to +1 (right road edge)
     playerSpeed: 0,
     boostRemaining: 0,
     spinoutRemaining: 0,
+    invincibleRemaining: 0,
     lap: 1,
-    lapLength: 4000,
+    lapLength: 3600,
     rivals: [
-      { id: 'bowser', name: 'Bowser', character: 'bowser', distance: 200, speed: 17.5, x: 0.3, color: '#dc2626' },
-      { id: 'dk', name: 'Donkey Kong', character: 'donkeykong', distance: 120, speed: 16.8, x: -0.3, color: '#78350f' },
-      { id: 'wario', name: 'Wario', character: 'wario', distance: 60, speed: 16.2, x: 0.1, color: '#facc15' },
+      { id: 'bowser', name: 'Bowser', character: 'bowser', distance: 100, speed: 15.0, x: 0.2, color: '#dc2626', spinout: 0 },
+      { id: 'dk', name: 'Donkey Kong', character: 'donkeykong', distance: 50, speed: 14.5, x: -0.3, color: '#78350f', spinout: 0 },
+      { id: 'wario', name: 'Wario', character: 'wario', distance: 20, speed: 14.0, x: 0.1, color: '#facc15', spinout: 0 },
     ],
     itemBoxes: [
-      { dist: 800, x: -0.3, hit: false },
-      { dist: 800, x: 0.3, hit: false },
-      { dist: 1800, x: -0.4, hit: false },
-      { dist: 1800, x: 0.4, hit: false },
-      { dist: 2800, x: 0.0, hit: false },
-      { dist: 3500, x: -0.2, hit: false },
-      { dist: 3500, x: 0.2, hit: false },
+      { dist: 600, x: -0.3, hit: false },
+      { dist: 600, x: 0.3, hit: false },
+      { dist: 1500, x: -0.4, hit: false },
+      { dist: 1500, x: 0.4, hit: false },
+      { dist: 2400, x: 0.0, hit: false },
+      { dist: 3100, x: -0.2, hit: false },
+      { dist: 3100, x: 0.2, hit: false },
     ],
     coins: [
-      { dist: 400, x: -0.2, hit: false },
-      { dist: 450, x: -0.2, hit: false },
-      { dist: 1200, x: 0.2, hit: false },
-      { dist: 1250, x: 0.2, hit: false },
-      { dist: 2200, x: -0.1, hit: false },
-      { dist: 2250, x: -0.1, hit: false },
-      { dist: 3100, x: 0.3, hit: false },
+      { dist: 300, x: -0.2, hit: false },
+      { dist: 350, x: -0.2, hit: false },
+      { dist: 1000, x: 0.2, hit: false },
+      { dist: 1050, x: 0.2, hit: false },
+      { dist: 1900, x: -0.1, hit: false },
+      { dist: 1950, x: -0.1, hit: false },
+      { dist: 2800, x: 0.3, hit: false },
     ],
     totalCoins: 0,
+    shells: [],
+    bananas: [],
   });
+
+  const useInventoryItem = () => {
+    if (!inventoryItem) return;
+    const race = raceRef.current;
+
+    if (inventoryItem === 'mushroom') {
+      race.boostRemaining = 180;
+      setActiveItem('TURBO DASH MUSHROOM!');
+      marioAudio.playFireball();
+      marioAudio.playPowerUp();
+    } else if (inventoryItem === 'star') {
+      race.invincibleRemaining = 240;
+      race.boostRemaining = 240;
+      setActiveItem('INVINCIBLE STAR HYPERSPEED!');
+      marioAudio.playStarTheme();
+    } else if (inventoryItem === 'greenshell') {
+      // Find closest rival ahead
+      const ahead = race.rivals.filter(r => r.distance > race.playerDist).sort((a, b) => a.distance - b.distance)[0];
+      if (ahead) {
+        ahead.spinout = 90;
+        ahead.distance -= 60;
+        setActiveItem(`GREEN SHELL SNIPED ${ahead.name.toUpperCase()}!`);
+      } else {
+        setActiveItem('GREEN SHELL LAUNCHED!');
+      }
+      marioAudio.playBowserHit();
+    } else if (inventoryItem === 'redshell') {
+      // Direct homing missile to 1st place rival
+      const leader = [...race.rivals].sort((a, b) => b.distance - a.distance)[0];
+      if (leader && leader.distance > race.playerDist) {
+        leader.spinout = 120;
+        leader.distance -= 100;
+        setActiveItem(`RED SHELL HIT LEADER ${leader.name.toUpperCase()}!`);
+      } else {
+        setActiveItem('RED SHELL SECURED 1ST PLACE!');
+      }
+      marioAudio.playBowserHit();
+    } else if (inventoryItem === 'banana') {
+      // Drop banana behind
+      const behind = race.rivals.filter(r => r.distance < race.playerDist).sort((a, b) => b.distance - a.distance)[0];
+      if (behind) {
+        behind.spinout = 90;
+        behind.distance -= 50;
+      }
+      setActiveItem('BANANA PEEL DROPPED BEHIND!');
+      marioAudio.playPipe();
+    }
+
+    setInventoryItem(null);
+  };
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -152,6 +208,10 @@ export const LaborKart: React.FC<LaborKartProps> = ({ equippedAvatar, onEarnCoin
       if (['ArrowRight', 'KeyD'].includes(e.code)) keysRef.current.right = true;
       if (['ArrowUp', 'KeyW'].includes(e.code)) keysRef.current.accel = true;
       if (['ArrowDown', 'KeyS'].includes(e.code)) keysRef.current.brake = true;
+      if (e.code === 'Space') {
+        e.preventDefault();
+        useInventoryItem();
+      }
     };
     const handleKeyUp = (e: KeyboardEvent) => {
       if (['ArrowLeft', 'KeyA'].includes(e.code)) keysRef.current.left = false;
@@ -166,7 +226,7 @@ export const LaborKart: React.FC<LaborKartProps> = ({ equippedAvatar, onEarnCoin
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, []);
+  }, [inventoryItem]);
 
   const triggerLaborQuestion = () => {
     setGameState('question');
@@ -179,8 +239,8 @@ export const LaborKart: React.FC<LaborKartProps> = ({ equippedAvatar, onEarnCoin
     if (!activeQuestion) return;
 
     if (selectedIdx === activeQuestion.correctIndex) {
-      // Correct! Massive Super Boost
-      raceRef.current.boostRemaining = 180; // 3 seconds of high speed
+      // Correct! Massive Super Boost + Give Item
+      raceRef.current.boostRemaining = 160;
       setActiveItem(activeQuestion.boostReward);
       marioAudio.playPowerUp();
       marioAudio.playFireball();
@@ -188,15 +248,18 @@ export const LaborKart: React.FC<LaborKartProps> = ({ equippedAvatar, onEarnCoin
       raceRef.current.totalCoins += 5;
       setCoinsGathered(raceRef.current.totalCoins);
 
+      const items: ('mushroom' | 'star' | 'redshell' | 'greenshell')[] = ['mushroom', 'star', 'redshell', 'greenshell'];
+      setInventoryItem(items[Math.floor(Math.random() * items.length)]);
+
       try {
         confetti({ particleCount: 30, spread: 60, origin: { y: 0.7 } });
       } catch {
         // ignore
       }
     } else {
-      // Wrong! Banana spinout penalty
-      raceRef.current.spinoutRemaining = 90; // 1.5 seconds spinout
-      setActiveItem('SLIPPED ON BANANA PEEL!');
+      // Wrong! Slight spinout penalty
+      raceRef.current.spinoutRemaining = 60;
+      setActiveItem('SLIPPED ON OIL SLICK!');
       marioAudio.playBowserHit();
     }
 
@@ -218,17 +281,17 @@ export const LaborKart: React.FC<LaborKartProps> = ({ equippedAvatar, onEarnCoin
 
       if (gameState === 'racing') {
         // 1. Acceleration / Steering Physics
-        const maxNormalSpeed = 18.0;
-        const maxBoostSpeed = 28.0;
-        const accelRate = 0.4;
-        const dragRate = 0.15;
+        const maxNormalSpeed = engineClass === '50cc' ? 20.0 : engineClass === '100cc' ? 22.0 : 25.0;
+        const maxBoostSpeed = engineClass === '50cc' ? 28.0 : engineClass === '100cc' ? 30.0 : 33.0;
+        const accelRate = 0.55;
+        const dragRate = 0.12;
 
         if (race.spinoutRemaining > 0) {
           race.spinoutRemaining -= 1;
           race.playerSpeed = Math.max(0, race.playerSpeed - 0.5);
         } else if (race.boostRemaining > 0) {
           race.boostRemaining -= 1;
-          race.playerSpeed = Math.min(maxBoostSpeed, race.playerSpeed + 0.8);
+          race.playerSpeed = Math.min(maxBoostSpeed, race.playerSpeed + 0.9);
         } else if (keysRef.current.accel) {
           race.playerSpeed = Math.min(maxNormalSpeed, race.playerSpeed + accelRate);
         } else if (keysRef.current.brake) {
@@ -238,7 +301,7 @@ export const LaborKart: React.FC<LaborKartProps> = ({ equippedAvatar, onEarnCoin
         }
 
         // Steering (proportional to current forward velocity)
-        const turnSpeed = 0.035 * (race.playerSpeed / maxNormalSpeed);
+        const turnSpeed = 0.038 * (race.playerSpeed / maxNormalSpeed);
         if (keysRef.current.left) {
           race.playerX = Math.max(-1.1, race.playerX - turnSpeed);
         }
@@ -248,7 +311,7 @@ export const LaborKart: React.FC<LaborKartProps> = ({ equippedAvatar, onEarnCoin
 
         // Off-road friction penalty
         if (Math.abs(race.playerX) > 0.85) {
-          race.playerSpeed = Math.min(8.0, race.playerSpeed);
+          race.playerSpeed = Math.min(9.0, race.playerSpeed);
         }
 
         // Advance distance
@@ -268,15 +331,29 @@ export const LaborKart: React.FC<LaborKartProps> = ({ equippedAvatar, onEarnCoin
           }
         }
 
-        // Advance Rivals
+        // Advance Rivals with dynamic rubberbanding
+        const rivalBaseSpeed = engineClass === '50cc' ? 12.5 : engineClass === '100cc' ? 14.8 : 16.5;
+        const myTotalDist = race.playerDist;
+
         race.rivals.forEach((rival) => {
-          rival.distance += rival.speed + (Math.sin(race.playerDist * 0.001) * 0.5);
-          // Simple lane oscillation
+          if (rival.spinout > 0) {
+            rival.spinout--;
+            rival.distance += 4.0; // slowed during spinout
+            return;
+          }
+          // Catchup mechanic: if rival is ahead of player, ease off so player can overtake
+          const distDiff = rival.distance - myTotalDist;
+          let factor = 1.0;
+          if (distDiff > 120) {
+            factor = 0.82; // catch up
+          } else if (distDiff < -140) {
+            factor = 1.08; // keep race exciting
+          }
+          rival.distance += (rivalBaseSpeed * factor) + (Math.sin(race.playerDist * 0.001) * 0.4);
           rival.x += (Math.sin(rival.distance * 0.01) * 0.005);
         });
 
         // Compute Live Placement
-        const myTotalDist = race.playerDist;
         let place = 1;
         race.rivals.forEach((r) => {
           if (r.distance > myTotalDist) place += 1;
@@ -493,9 +570,10 @@ export const LaborKart: React.FC<LaborKartProps> = ({ equippedAvatar, onEarnCoin
     raceRef.current.playerDist = 0;
     raceRef.current.playerSpeed = 0;
     raceRef.current.lap = 1;
-    raceRef.current.rivals[0].distance = 250;
-    raceRef.current.rivals[1].distance = 180;
-    raceRef.current.rivals[2].distance = 100;
+    raceRef.current.rivals[0].distance = 40;
+    raceRef.current.rivals[1].distance = 25;
+    raceRef.current.rivals[2].distance = 10;
+    raceRef.current.rivals.forEach((r) => (r.spinout = 0));
     raceRef.current.itemBoxes.forEach((b) => (b.hit = false));
     raceRef.current.coins.forEach((c) => (c.hit = false));
     setCurrentLap(1);
@@ -677,6 +755,20 @@ export const LaborKart: React.FC<LaborKartProps> = ({ equippedAvatar, onEarnCoin
           </div>
 
           <div className="flex items-center gap-2">
+            {inventoryItem ? (
+              <button
+                onClick={useInventoryItem}
+                aria-label={`Use ${inventoryItem}`}
+                className="min-h-[44px] px-4 py-2.5 bg-amber-400 hover:bg-amber-300 text-slate-950 font-black rounded-xl border-3 border-black shadow-[0_3px_0_#000] active:translate-y-0.5 font-mario text-[10px] sm:text-xs cursor-pointer whitespace-nowrap animate-pulse"
+              >
+                ★ USE {inventoryItem.toUpperCase()} (SPACE)
+              </button>
+            ) : (
+              <div className="hidden sm:inline-flex items-center gap-1 bg-slate-950 px-2.5 py-1.5 rounded-xl border border-slate-700 text-[10px] font-mario text-slate-500">
+                NO ITEM
+              </div>
+            )}
+
             <button
               onMouseDown={() => (keysRef.current.accel = true)}
               onMouseUp={() => (keysRef.current.accel = false)}
@@ -687,6 +779,31 @@ export const LaborKart: React.FC<LaborKartProps> = ({ equippedAvatar, onEarnCoin
             >
               GAS ▲
             </button>
+          </div>
+        </div>
+
+        {/* Engine Class Selector Bar */}
+        <div className="mt-3 pt-2.5 border-t border-slate-800 flex items-center justify-between gap-2 flex-wrap text-xs">
+          <span className="text-[10px] font-black uppercase text-slate-400 font-mario">
+            SPEED CLASS:
+          </span>
+          <div className="flex items-center gap-1.5">
+            {(['50cc', '100cc', '150cc'] as const).map((cc) => (
+              <button
+                key={cc}
+                onClick={() => {
+                  setEngineClass(cc);
+                  marioAudio.playCoin();
+                }}
+                className={`px-3 py-1 rounded-lg font-mario text-[10px] font-black border transition-all cursor-pointer ${
+                  engineClass === cc
+                    ? 'bg-amber-400 text-slate-950 border-black shadow-[0_2px_0_#000]'
+                    : 'bg-slate-800 text-slate-300 border-slate-700 hover:text-white'
+                }`}
+              >
+                {cc}
+              </button>
+            ))}
           </div>
         </div>
       </div>

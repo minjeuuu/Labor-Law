@@ -29,7 +29,7 @@ import {
   Compass,
 } from 'lucide-react';
 import { MarioCoinIcon, MarioCharacterAvatar } from './MarioIcons';
-import { marioAudio, AudioSettings } from '../utils/audio';
+import { marioAudio, AudioSettings, SOUND_PACK_DEFINITIONS } from '../utils/audio';
 import { AudioSettingsModal } from './AudioSettingsModal';
 import { ComplexityMode, MarioAvatar, StudyDifficulty } from '../types/laborLaw';
 import { StudyTimer } from './StudyTimer';
@@ -72,6 +72,8 @@ interface NavbarProps {
   onOpenExportProgress?: () => void;
   onOpenGlobalSearch?: () => void;
   onOpenPrintGuide?: () => void;
+  showLegalCitations?: boolean;
+  setShowLegalCitations?: (show: boolean) => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -103,8 +105,11 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenExportProgress,
   onOpenGlobalSearch,
   onOpenPrintGuide,
+  showLegalCitations = true,
+  setShowLegalCitations,
 }) => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [showQuickAudioSliders, setShowQuickAudioSliders] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [audioState, setAudioState] = useState<AudioSettings>({ ...marioAudio.settings });
 
@@ -313,29 +318,202 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </span>
               </button>
 
-              {/* 5. Dedicated Soundscapes & SFX Mixer Modal Button (Desktop/Tablet) */}
-              <button
-                type="button"
-                onClick={() => {
-                  setIsSettingsOpen(true);
-                  marioAudio.playPipe();
-                }}
-                data-testid="navbar-sound-settings-btn"
-                aria-label="Open Soundscape and Audio Settings"
-                title={`Soundscape: ${activeSoundscapeMeta.name}. Click to choose Overworld, Underground, Castle, or Star Road.`}
-                className={`hidden md:inline-flex h-7 px-2 items-center justify-center gap-1 rounded-lg border text-xs font-bold leading-none whitespace-nowrap transition-all cursor-pointer ${
-                  audioActive
-                    ? 'bg-slate-800 hover:bg-slate-700 text-amber-300 border-slate-700'
-                    : 'bg-red-950/60 hover:bg-red-900/60 text-red-300 border-red-700'
-                }`}
-              >
-                {audioActive ? (
-                  <Volume2 className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                ) : (
-                  <VolumeX className="w-3.5 h-3.5 text-red-400 shrink-0" />
+              {/* 5. Dedicated Audio Sliders & Soundscapes Quick Mixer (Navbar Accessible) */}
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowQuickAudioSliders(!showQuickAudioSliders);
+                    marioAudio.playCoin();
+                  }}
+                  data-testid="navbar-audio-sliders-btn"
+                  aria-label="Open Dedicated Audio Volume Sliders"
+                  title="Adjust BGM & SFX volume directly"
+                  className={`h-7 px-2 inline-flex items-center justify-center gap-1.5 rounded-lg border text-xs font-bold leading-none whitespace-nowrap transition-all cursor-pointer ${
+                    showQuickAudioSliders
+                      ? 'bg-amber-400 text-slate-950 border-black shadow-[0_1px_0_#000]'
+                      : audioActive
+                      ? 'bg-slate-800 hover:bg-slate-700 text-amber-300 border-slate-700'
+                      : 'bg-red-950/60 hover:bg-red-900/60 text-red-300 border-red-700'
+                  }`}
+                >
+                  {audioActive ? (
+                    <Volume2 className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                  ) : (
+                    <VolumeX className="w-3.5 h-3.5 text-red-400 shrink-0" />
+                  )}
+                  <Sliders className="w-3 h-3 text-slate-300 shrink-0" />
+                  <span className="hidden xl:inline text-[10px] font-mario">MIXER</span>
+                </button>
+
+                {/* Dedicated Audio Sliders Floating Popover */}
+                {showQuickAudioSliders && (
+                  <div
+                    data-testid="navbar-audio-sliders-popover"
+                    className="absolute right-0 top-full mt-2 w-72 sm:w-80 bg-slate-950/95 border-3 border-amber-400 rounded-2xl p-4 shadow-[6px_6px_0_#000] z-50 text-white space-y-3.5 backdrop-blur-md"
+                  >
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                      <div className="flex items-center gap-2">
+                        <Sliders className="w-4 h-4 text-amber-400" />
+                        <span className="text-xs font-black uppercase text-amber-400 font-mario">
+                          AUDIO MIXER
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowQuickAudioSliders(false)}
+                        className="text-slate-400 hover:text-white text-xs font-bold cursor-pointer"
+                      >
+                        ✕
+                      </button>
+                    </div>
+
+                    {/* BGM Volume Slider */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-bold flex items-center gap-1.5 text-slate-200">
+                          <Music className="w-3.5 h-3.5 text-emerald-400" />
+                          <span>Background Music</span>
+                        </span>
+                        <span className="font-mono text-amber-300 font-bold tabular-nums">
+                          {Math.round((audioState.musicVolume ?? 0.42) * 100)}%
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.05"
+                        value={audioState.musicVolume ?? 0.42}
+                        onChange={(e) => {
+                          const val = parseFloat(e.target.value);
+                          marioAudio.updateSettings({ musicVolume: val });
+                        }}
+                        className="w-full accent-amber-400 cursor-pointer h-2 bg-slate-800 rounded-lg"
+                      />
+                    </div>
+
+                    {/* UI Sound Effects (SFX) Volume Slider */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-bold flex items-center gap-1.5 text-slate-200">
+                          <Volume2 className="w-3.5 h-3.5 text-amber-400" />
+                          <span>Sound Effects (SFX)</span>
+                        </span>
+                        <span className="font-mono text-amber-300 font-bold tabular-nums">
+                          {Math.round((audioState.volume ?? 0.8) * 100)}%
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.05"
+                        value={audioState.volume ?? 0.8}
+                        onChange={(e) => {
+                          const val = parseFloat(e.target.value);
+                          marioAudio.updateSettings({ volume: val });
+                        }}
+                        onMouseUp={() => marioAudio.playCoin()}
+                        onTouchEnd={() => marioAudio.playCoin()}
+                        className="w-full accent-amber-400 cursor-pointer h-2 bg-slate-800 rounded-lg"
+                      />
+                    </div>
+
+                    {/* Equipped Audio Pack Selector */}
+                    <div className="pt-2 border-t border-slate-800 space-y-1.5" data-testid="navbar-audio-pack-control">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-bold flex items-center gap-1.5 text-slate-200">
+                          <Volume2 className="w-3.5 h-3.5 text-amber-400" />
+                          <span>Active Audio Pack:</span>
+                        </span>
+                        <span className="font-mono text-amber-300 font-bold text-[10px] font-mario">
+                          {SOUND_PACK_DEFINITIONS.find((p) => p.id === (audioState.soundPack || 'sound_default'))?.badge || 'Classic 8-Bit'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <select
+                          aria-label="Active Sound Pack"
+                          value={audioState.soundPack || 'sound_default'}
+                          onChange={(e) => {
+                            const val = e.target.value as any;
+                            marioAudio.setSoundPack(val, true);
+                          }}
+                          className="w-full bg-slate-900 border border-slate-700 hover:border-amber-400 rounded-lg text-xs font-bold px-2 py-1.5 text-white cursor-pointer focus:outline-hidden"
+                        >
+                          {SOUND_PACK_DEFINITIONS.map((pack) => {
+                            const unlockedItemIds = (() => {
+                              const defaults = ['theme_overworld', 'avatar_mario', 'avatar_luigi', 'avatar_peach', 'sound_default'];
+                              try {
+                                const saved = localStorage.getItem('mario_unlocked_items');
+                                if (saved) return Array.from(new Set([...defaults, ...JSON.parse(saved)]));
+                              } catch {}
+                              return defaults;
+                            })();
+                            const isUnlocked = unlockedItemIds.includes(pack.id) || pack.defaultPrice === 0;
+                            return (
+                              <option key={pack.id} value={pack.id} disabled={!isUnlocked}>
+                                {pack.name} {!isUnlocked ? `(${pack.defaultPrice}c in Shop)` : ''}
+                              </option>
+                            );
+                          })}
+                        </select>
+                        <button
+                          type="button"
+                          onClick={() => marioAudio.previewSoundPack(audioState.soundPack || 'sound_default')}
+                          title="Preview sound pack"
+                          aria-label="Preview active sound pack"
+                          className="h-8 px-2 bg-slate-800 hover:bg-slate-700 text-amber-300 rounded-lg border border-slate-700 cursor-pointer flex items-center justify-center shrink-0"
+                        >
+                          <Play className="w-3 h-3 fill-current" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Legal Citations Quick Toggle */}
+                    {setShowLegalCitations && (
+                      <div className="pt-2 border-t border-slate-800 flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-300">Legal Citations:</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowLegalCitations(!showLegalCitations);
+                            marioAudio.playCoin();
+                          }}
+                          className={`px-2.5 py-1 rounded-lg text-[10px] font-black font-mario border cursor-pointer ${
+                            showLegalCitations
+                              ? 'bg-amber-400 text-slate-950 border-black'
+                              : 'bg-slate-800 text-slate-400 border-slate-700'
+                          }`}
+                        >
+                          {showLegalCitations ? 'SHOWN' : 'HIDDEN'}
+                        </button>
+                      </div>
+                    )}
+
+                    <div className="pt-2 border-t border-slate-800 flex items-center justify-between gap-2">
+                      <button
+                        type="button"
+                        onClick={handleToggleBgm}
+                        className="flex-1 py-1.5 px-2 bg-slate-800 hover:bg-slate-700 text-amber-300 text-[11px] font-black rounded-lg border border-slate-700 cursor-pointer"
+                      >
+                        {musicActive ? 'Pause Music' : 'Play Music'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsSettingsOpen(true);
+                          setShowQuickAudioSliders(false);
+                          marioAudio.playPipe();
+                        }}
+                        className="flex-1 py-1.5 px-2 bg-amber-400 hover:bg-amber-300 text-slate-950 text-[11px] font-black rounded-lg border border-black cursor-pointer"
+                      >
+                        More Audio...
+                      </button>
+                    </div>
+                  </div>
                 )}
-                <Sliders className="w-3 h-3 text-slate-300 shrink-0" />
-              </button>
+              </div>
 
               {/* 6. Coin Counter / Toad's Shop shortcut */}
               <button
@@ -696,6 +874,92 @@ export const Navbar: React.FC<NavbarProps> = ({
                   </button>
                 ))}
               </div>
+
+              {/* Mobile Volume Sliders for BGM and SFX */}
+              <div className="pt-2 border-t border-slate-800 space-y-2">
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between text-xs text-slate-300">
+                    <span className="flex items-center gap-1 font-bold">
+                      <Music className="w-3.5 h-3.5 text-emerald-400" /> BGM Volume
+                    </span>
+                    <span className="font-mono text-amber-300 font-bold tabular-nums">
+                      {Math.round((audioState.musicVolume ?? 0.42) * 100)}%
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.05"
+                    value={audioState.musicVolume ?? 0.42}
+                    onChange={(e) => marioAudio.updateSettings({ musicVolume: parseFloat(e.target.value) })}
+                    className="w-full accent-amber-400 h-2 bg-slate-800 rounded-lg cursor-pointer"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between text-xs text-slate-300">
+                    <span className="flex items-center gap-1 font-bold">
+                      <Volume2 className="w-3.5 h-3.5 text-amber-400" /> SFX Volume
+                    </span>
+                    <span className="font-mono text-amber-300 font-bold tabular-nums">
+                      {Math.round((audioState.volume ?? 0.8) * 100)}%
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.05"
+                    value={audioState.volume ?? 0.8}
+                    onChange={(e) => marioAudio.updateSettings({ volume: parseFloat(e.target.value) })}
+                    className="w-full accent-amber-400 h-2 bg-slate-800 rounded-lg cursor-pointer"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Mobile Sound Pack Selector */}
+            <div className="bg-slate-950 p-2.5 rounded-2xl border border-slate-700 space-y-1.5" data-testid="mobile-audio-pack-control">
+              <div className="flex items-center justify-between text-[10px] font-black uppercase text-amber-400 font-mario">
+                <span>ACTIVE AUDIO PACK</span>
+                <span>{SOUND_PACK_DEFINITIONS.find((p) => p.id === (audioState.soundPack || 'sound_default'))?.badge || 'Classic 8-Bit'}</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <select
+                  aria-label="Active Sound Pack (Mobile)"
+                  value={audioState.soundPack || 'sound_default'}
+                  onChange={(e) => {
+                    const val = e.target.value as any;
+                    marioAudio.setSoundPack(val, true);
+                  }}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-lg text-xs font-bold px-2 py-2 text-white cursor-pointer"
+                >
+                  {SOUND_PACK_DEFINITIONS.map((pack) => {
+                    const unlockedItemIds = (() => {
+                      const defaults = ['theme_overworld', 'avatar_mario', 'avatar_luigi', 'avatar_peach', 'sound_default'];
+                      try {
+                        const saved = localStorage.getItem('mario_unlocked_items');
+                        if (saved) return Array.from(new Set([...defaults, ...JSON.parse(saved)]));
+                      } catch {}
+                      return defaults;
+                    })();
+                    const isUnlocked = unlockedItemIds.includes(pack.id) || pack.defaultPrice === 0;
+                    return (
+                      <option key={pack.id} value={pack.id} disabled={!isUnlocked}>
+                        {pack.name} {!isUnlocked ? `(${pack.defaultPrice}c in Shop)` : ''}
+                      </option>
+                    );
+                  })}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => marioAudio.previewSoundPack(audioState.soundPack || 'sound_default')}
+                  title="Test Sound Pack"
+                  className="h-9 px-2.5 bg-slate-800 text-amber-300 rounded-lg border border-slate-700 flex items-center justify-center shrink-0 cursor-pointer"
+                >
+                  <Play className="w-3.5 h-3.5 fill-current" />
+                </button>
+              </div>
             </div>
 
             {/* Global Difficulty Segmented Selector inside Mobile Drawer */}
@@ -825,6 +1089,9 @@ export const Navbar: React.FC<NavbarProps> = ({
         onClose={() => setIsSettingsOpen(false)}
         complexityMode={complexityMode}
         setComplexityMode={setComplexityMode}
+        showLegalCitations={showLegalCitations}
+        setShowLegalCitations={setShowLegalCitations}
+        onOpenShop={onOpenShop}
       />
     </>
   );

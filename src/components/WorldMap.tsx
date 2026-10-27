@@ -29,6 +29,7 @@ import {
   Lock,
   Sparkles,
   Award,
+  Shuffle,
 } from 'lucide-react';
 
 interface WorldMapProps {
@@ -138,6 +139,19 @@ const MAP_NODES: MapNode[] = [
     topicsCount: 3,
   },
   {
+    id: 'world6',
+    levelNumber: 'WORLD 6',
+    name: 'PEACH CASTLE',
+    worldName: 'Statutory Leaves',
+    x: 88,
+    y: 22,
+    iconType: 'crown',
+    badge: 'Art. 95, RA 11210, 8187, 8972, 9710, 9262',
+    summary:
+      'Service Incentive Leave (5 days), 105-Day Maternity & 7-Day Father Allocation, Paternity, Solo Parents, Gynecological Surgery & VAWC Leaves.',
+    topicsCount: 6,
+  },
+  {
     id: 'warp_calc',
     levelNumber: 'WARP PIPE',
     name: 'PIPE LAND',
@@ -190,6 +204,32 @@ export const WorldMap: React.FC<WorldMapProps> = ({
     [completedTopicIds]
   );
 
+  const uncompletedTopics = useMemo(() => {
+    return ALL_LAW_TOPICS.filter((t) => !completedTopicIds?.includes(t.id));
+  }, [completedTopicIds]);
+
+  const [quickStudyOffset, setQuickStudyOffset] = useState<number>(0);
+
+  const suggestedTopic = useMemo(() => {
+    const pool = uncompletedTopics.length > 0 ? uncompletedTopics : ALL_LAW_TOPICS;
+    if (pool.length === 0) return null;
+    return pool[quickStudyOffset % pool.length];
+  }, [uncompletedTopics, quickStudyOffset]);
+
+  const handleShuffleQuickStudy = () => {
+    marioAudio.playCoin();
+    setQuickStudyOffset((prev) => prev + 1);
+  };
+
+  const handleWarpToSuggested = (topic: typeof ALL_LAW_TOPICS[number]) => {
+    marioAudio.playPipe();
+    if (onSelectTopic) {
+      onSelectTopic(topic.worldId, topic.id);
+    } else {
+      onSelectWorld(topic.worldId);
+    }
+  };
+
   const selectedNode =
     MAP_NODES.find((n) => n.id === selectedNodeId) || MAP_NODES[0];
   const selectedWorldProgress = worldProgressMap[selectedNode.id] || null;
@@ -232,7 +272,7 @@ export const WorldMap: React.FC<WorldMapProps> = ({
                   OVERWORLD LEVEL SELECT
                 </span>
                 <span className="text-emerald-300 text-xs font-bold tabular-nums">
-                  · {completedTopicIds.length}/{ALL_LAW_TOPICS.length} Topics · {totalClearedWorlds}/5 Worlds
+                  · {completedTopicIds.length}/{ALL_LAW_TOPICS.length} Topics · {totalClearedWorlds}/6 Worlds
                 </span>
               </div>
               <h2 className="text-2xl md:text-3xl font-black text-white font-display">
@@ -329,6 +369,64 @@ export const WorldMap: React.FC<WorldMapProps> = ({
           </div>
         </div>
 
+        {/* Quick Study Widget: Suggests uncompleted topic to review */}
+        <div
+          data-testid="quick-study-widget"
+          className="mb-4 bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-300 rounded-2xl border-4 border-slate-950 p-4 shadow-[4px_4px_0_#000] flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 text-slate-950"
+        >
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-slate-950 text-amber-400 border-2 border-slate-900 flex items-center justify-center shrink-0 shadow-[0_2px_0_#000]">
+              <Sparkles className="w-6 h-6 animate-pulse" />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-[10px] font-black uppercase font-mario px-2 py-0.5 rounded bg-slate-950 text-amber-300 border border-black leading-none">
+                  ⚡ QUICK STUDY WIDGET
+                </span>
+                {suggestedTopic && (
+                  <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-white/85 text-slate-900 font-mono border border-black/30">
+                    {suggestedTopic.badge}
+                  </span>
+                )}
+                <span className="text-xs font-bold text-slate-800">
+                  {uncompletedTopics.length > 0
+                    ? `${uncompletedTopics.length} topics left to master`
+                    : 'All topics cleared! Reviewing random:'}
+                </span>
+              </div>
+              <h4 className="text-base sm:text-lg font-black text-slate-950 font-display truncate mt-0.5">
+                {suggestedTopic ? suggestedTopic.title : 'Ready to study!'}
+              </h4>
+              <p className="text-xs text-slate-900 font-medium line-clamp-1">
+                {suggestedTopic ? suggestedTopic.summary : 'Select any world node below to start.'}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={handleShuffleQuickStudy}
+              title="Suggest another topic"
+              className="h-10 px-3 rounded-xl bg-white hover:bg-slate-100 text-slate-950 font-black text-xs border-2 border-slate-950 shadow-[0_2px_0_#000] active:translate-y-0.5 inline-flex items-center gap-1.5 cursor-pointer"
+            >
+              <Shuffle className="w-4 h-4 shrink-0" />
+              <span>Shuffle</span>
+            </button>
+
+            {suggestedTopic && (
+              <button
+                type="button"
+                onClick={() => handleWarpToSuggested(suggestedTopic)}
+                className="h-10 px-4 rounded-xl bg-slate-950 hover:bg-slate-900 text-amber-300 font-black text-xs font-mario border-2 border-black shadow-[0_2px_0_#000] active:translate-y-0.5 inline-flex items-center gap-2 cursor-pointer"
+              >
+                <span>WARP TO TOPIC</span>
+                <ArrowRight className="w-4 h-4 text-amber-400 shrink-0" />
+              </button>
+            )}
+          </div>
+        </div>
+
         {/* 2D Canvas-style Interactive Map Display with Live Unlocked/Cleared Progress */}
         <div
           data-testid="interactive-world-map"
@@ -378,6 +476,13 @@ export const WorldMap: React.FC<WorldMapProps> = ({
               stroke={worldProgressMap.world5?.isWorldUnlocked ? '#34d399' : '#F59E0B'}
               strokeWidth="1.4"
               strokeDasharray={worldProgressMap.world4?.isWorldCleared ? undefined : '2 2'}
+              fill="none"
+            />
+            <path
+              d="M 84 62 Q 89 42 88 22"
+              stroke={worldProgressMap.world6?.isWorldUnlocked ? '#34d399' : '#F59E0B'}
+              strokeWidth="1.4"
+              strokeDasharray={worldProgressMap.world5?.isWorldCleared ? undefined : '2 2'}
               fill="none"
             />
             <path d="M 16 70 L 34 84" stroke="#10B981" strokeWidth="1" strokeDasharray="1.5 1.5" fill="none" />

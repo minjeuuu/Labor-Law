@@ -3,6 +3,7 @@ import {
   marioAudio,
   AudioSettings,
   DEFAULT_AUDIO_SETTINGS,
+  SOUND_PACK_DEFINITIONS,
   TabSfxType,
   CardSfxType,
   QuizSfxType,
@@ -22,6 +23,7 @@ import {
   Music,
   Sliders,
   Disc3,
+  ShoppingBag,
 } from 'lucide-react';
 import {
   MarioMushroomIcon,
@@ -38,6 +40,9 @@ interface AudioSettingsModalProps {
   onClose: () => void;
   complexityMode?: ComplexityMode;
   setComplexityMode?: (mode: ComplexityMode) => void;
+  showLegalCitations?: boolean;
+  setShowLegalCitations?: (show: boolean) => void;
+  onOpenShop?: () => void;
 }
 
 export const AudioSettingsModal: React.FC<AudioSettingsModalProps> = ({
@@ -45,6 +50,9 @@ export const AudioSettingsModal: React.FC<AudioSettingsModalProps> = ({
   onClose,
   complexityMode = 'beginner',
   setComplexityMode,
+  showLegalCitations = true,
+  setShowLegalCitations,
+  onOpenShop,
 }) => {
   const [settings, setSettings] = useState<AudioSettings>({ ...marioAudio.settings });
 
@@ -170,6 +178,45 @@ export const AudioSettingsModal: React.FC<AudioSettingsModalProps> = ({
               {settings.enabled ? 'ON' : 'MUTED'}
             </button>
           </div>
+
+          {/* Global Legal Citations Toggle for Advanced / Bar Review Students */}
+          {setShowLegalCitations && (
+            <div
+              data-testid="legal-citations-setting-card"
+              className="bg-slate-900/90 rounded-2xl p-4 border-2 border-amber-400/70 flex items-center justify-between gap-3"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-400 text-slate-950 border-2 border-black flex items-center justify-center shrink-0 shadow-[0_2px_0_#000]">
+                  <MarioStarIcon className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-black text-sm sm:text-base text-white">Legal Citations Display</span>
+                    <span className="text-[10px] font-black uppercase px-1.5 py-0.5 rounded bg-amber-400 text-slate-950 font-mario leading-none">
+                      BAR STUDY
+                    </span>
+                  </div>
+                  <span className="text-xs text-slate-400 block mt-0.5">
+                    Reveal or hide explicit Article numbers (e.g. Art. 83) and Republic Acts in topic cards.
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowLegalCitations(!showLegalCitations);
+                  marioAudio.playCoin();
+                }}
+                className={`px-4 py-2 rounded-xl font-black text-xs font-mario border-2 border-black cursor-pointer shadow-[0_2px_0_#000] active:translate-y-0.5 transition-all ${
+                  showLegalCitations
+                    ? 'bg-amber-400 text-slate-950'
+                    : 'bg-slate-700 text-slate-300'
+                }`}
+              >
+                {showLegalCitations ? 'SHOWN' : 'HIDDEN'}
+              </button>
+            </div>
+          )}
 
           {/* Ambient Mario Soundscape Selector + BGM Player */}
           <div className="bg-slate-900/95 rounded-2xl p-4 border-2 border-amber-400/60 space-y-3.5">
@@ -550,6 +597,126 @@ export const AudioSettingsModal: React.FC<AudioSettingsModalProps> = ({
                       <Play className="w-3 h-3 fill-current" />
                       <span>Test SFX</span>
                     </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Section 4: Equipped Audio Pack & Synthesizer Timbre */}
+          <div className="space-y-3 pt-2 border-t-2 border-slate-700" data-testid="audio-packs-section">
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="text-xs font-black uppercase text-amber-400 tracking-wider block font-mario">
+                  4. ACTIVE AUDIO PACK &amp; TIMBRE
+                </span>
+                <span className="text-xs text-slate-300 font-semibold">
+                  Equip soundpacks unlocked in Toad&apos;s Store to modify synthesized instruments
+                </span>
+              </div>
+              <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-amber-400 text-slate-950 font-mario border border-black">
+                STORE AUDIO PACKS
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              {SOUND_PACK_DEFINITIONS.map((pack) => {
+                const unlockedItemIds = (() => {
+                  const defaults = [
+                    'theme_overworld',
+                    'avatar_mario',
+                    'avatar_luigi',
+                    'avatar_peach',
+                    'sound_default',
+                  ];
+                  if (typeof window !== 'undefined') {
+                    try {
+                      const saved = localStorage.getItem('mario_unlocked_items');
+                      if (saved) {
+                        const parsed = JSON.parse(saved) as string[];
+                        return Array.from(new Set([...defaults, ...parsed]));
+                      }
+                    } catch {
+                      // fallback
+                    }
+                  }
+                  return defaults;
+                })();
+
+                const isEquipped = settings.soundPack === pack.id;
+                const isUnlocked = unlockedItemIds.includes(pack.id) || pack.defaultPrice === 0;
+
+                return (
+                  <div
+                    key={pack.id}
+                    data-testid={`settings-soundpack-${pack.id}`}
+                    className={`p-3 rounded-2xl border-2 transition-all flex flex-col justify-between gap-2.5 ${
+                      isEquipped
+                        ? 'bg-amber-400/15 border-amber-400 text-white shadow-[0_2px_0_#000]'
+                        : 'bg-slate-900/80 border-slate-700 text-slate-300'
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between gap-1 mb-1">
+                        <span className="font-black text-xs sm:text-sm text-white font-display">
+                          {pack.name}
+                        </span>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-indigo-900 text-amber-300 border border-black font-mario">
+                            {pack.badge}
+                          </span>
+                          {isEquipped && (
+                            <span className="text-[9px] font-black uppercase text-emerald-900 bg-emerald-300 px-1.5 py-0.5 rounded font-mario flex items-center gap-0.5">
+                              <Check className="w-2.5 h-2.5 stroke-[3]" />
+                              EQUIPPED
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <p className="text-[11px] text-slate-400 leading-snug">
+                        {pack.description}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-2 pt-1.5 border-t border-slate-800">
+                      <button
+                        type="button"
+                        onClick={() => marioAudio.previewSoundPack(pack.id)}
+                        disabled={!settings.enabled}
+                        className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 text-[11px] font-bold border border-slate-600 cursor-pointer disabled:opacity-40"
+                      >
+                        <Play className="w-3 h-3 fill-current" />
+                        <span>Preview</span>
+                      </button>
+
+                      {isUnlocked ? (
+                        <button
+                          type="button"
+                          onClick={() => marioAudio.setSoundPack(pack.id, true)}
+                          disabled={isEquipped}
+                          className={`px-3 py-1 rounded-lg font-black text-xs border cursor-pointer transition-all ${
+                            isEquipped
+                              ? 'bg-emerald-500 text-slate-950 border-black cursor-default'
+                              : 'bg-amber-400 hover:bg-amber-300 text-slate-950 border-black shadow-[0_1px_0_#000]'
+                          }`}
+                        >
+                          {isEquipped ? 'Active' : 'Equip Pack'}
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (onOpenShop) {
+                              onClose();
+                              onOpenShop();
+                            }
+                          }}
+                          className="px-2.5 py-1 rounded-lg font-black text-[11px] bg-red-600 hover:bg-red-500 text-white border border-black cursor-pointer shadow-[0_1px_0_#000]"
+                        >
+                          Store ({pack.defaultPrice}c)
+                        </button>
+                      )}
+                    </div>
                   </div>
                 );
               })}

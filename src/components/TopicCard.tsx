@@ -44,6 +44,7 @@ interface TopicCardProps {
   isCompleted?: boolean;
   onToggleComplete?: () => void;
   complexityMode?: ComplexityMode;
+  showLegalCitations?: boolean;
 }
 
 export const TopicCard: React.FC<TopicCardProps> = ({
@@ -53,6 +54,7 @@ export const TopicCard: React.FC<TopicCardProps> = ({
   isCompleted = false,
   onToggleComplete,
   complexityMode = 'beginner',
+  showLegalCitations = true,
 }) => {
   const [isExpanded, setIsExpanded] = useState(true);
   const [copied, setCopied] = useState(false);
@@ -62,12 +64,24 @@ export const TopicCard: React.FC<TopicCardProps> = ({
   const [showSpeedControls, setShowSpeedControls] = useState(false);
   const [viewTab, setViewTab] = useState<'all' | 'cards' | 'tables'>('all');
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const activeChunksRef = useRef<string[]>([]);
+  const chunkIndexRef = useRef<number>(0);
+  const isCancelledRef = useRef<boolean>(false);
+
+  const stopAllSpeech = () => {
+    isCancelledRef.current = true;
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+    setIsSpeaking(false);
+    setIsPaused(false);
+    activeChunksRef.current = [];
+    chunkIndexRef.current = 0;
+  };
 
   useEffect(() => {
     return () => {
-      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-      }
+      stopAllSpeech();
     };
   }, []);
 
@@ -99,6 +113,53 @@ export const TopicCard: React.FC<TopicCardProps> = ({
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const speakChunkAtIndex = (index: number) => {
+    if (isCancelledRef.current) return;
+    if (index >= activeChunksRef.current.length) {
+      setIsSpeaking(false);
+      setIsPaused(false);
+      marioAudio.playCoin();
+      return;
+    }
+
+    const chunkText = activeChunksRef.current[index];
+    if (!chunkText || !chunkText.trim()) {
+      chunkIndexRef.current = index + 1;
+      speakChunkAtIndex(index + 1);
+      return;
+    }
+
+    const utterance = new SpeechSynthesisUtterance(chunkText);
+    utterance.rate = playbackSpeed;
+    utterance.pitch = 1.0;
+
+    try {
+      const voices = window.speechSynthesis.getVoices();
+      if (voices && voices.length > 0) {
+        const enVoice = voices.find((v) => v.lang.startsWith('en')) || voices[0];
+        if (enVoice) utterance.voice = enVoice;
+      }
+    } catch {}
+
+    utterance.onend = () => {
+      if (!isCancelledRef.current) {
+        chunkIndexRef.current = index + 1;
+        speakChunkAtIndex(index + 1);
+      }
+    };
+
+    utterance.onerror = (e) => {
+      console.warn('Speech chunk handled:', e);
+      if (!isCancelledRef.current) {
+        chunkIndexRef.current = index + 1;
+        speakChunkAtIndex(index + 1);
+      }
+    };
+
+    utteranceRef.current = utterance;
+    window.speechSynthesis.speak(utterance);
+  };
+
   const handleToggleSpeech = () => {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
       return;
@@ -117,7 +178,8 @@ export const TopicCard: React.FC<TopicCardProps> = ({
       return;
     }
 
-    window.speechSynthesis.cancel();
+    stopAllSpeech();
+    isCancelledRef.current = false;
 
     const summaryText =
       complexityMode === 'beginner'
@@ -128,7 +190,7 @@ export const TopicCard: React.FC<TopicCardProps> = ({
       ? `Core Doctrines: ${topic.keyDoctrines.map((d) => cleanRuleText(d)).join('. ')}`
       : '';
 
-    const rulesText = topic.rules
+    const rulesText = (topic.rules || [])
       .map((r) => {
         const items = r.items ? r.items.map((i) => cleanRuleText(i)).join('. ') : '';
         const subs = r.subSections
@@ -142,33 +204,50 @@ export const TopicCard: React.FC<TopicCardProps> = ({
 
     const fullText = `${topic.title}. Statutory reference: ${topic.badge}. Summary: ${summaryText}. ${doctrinesText}. Detailed Provisions: ${rulesText}.`;
 
-    const utterance = new SpeechSynthesisUtterance(fullText);
-    utterance.rate = playbackSpeed;
-    utterance.pitch = 1.0;
-    utteranceRef.current = utterance;
+    // Split into speech chunks (~160 chars) so Blink/WebKit audio never stalls
+    const sentences = fullText.match(/[^.?!;:]+[.?!;:]+/g) || [fullText];
+    const chunks: string[] = [];
+    let current = '';
 
-    utterance.onend = () => {
-      setIsSpeaking(false);
-      setIsPaused(false);
-      marioAudio.playCoin();
-    };
-    utterance.onerror = () => {
-      setIsSpeaking(false);
-      setIsPaused(false);
-    };
+    for (const s of sentences) {
+      const clean = s.trim();
+      if (!clean) continue;
+      if ((current + ' ' + clean).trim().length <= 160) {
+        current = (current + ' ' + clean).trim();
+      } else {
+        if (current) chunks.push(current);
+        if (clean.length > 160) {
+          const words = clean.split(/\s+/);
+          let sub = '';
+          for (const w of words) {
+            if ((sub + ' ' + w).trim().length <= 160) {
+              sub = (sub + ' ' + w).trim();
+            } else {
+              if (sub) chunks.push(sub);
+              sub = w;
+            }
+          }
+          if (sub) current = sub;
+          else current = '';
+        } else {
+          current = clean;
+        }
+      }
+    }
+    if (current) chunks.push(current);
+
+    activeChunksRef.current = chunks;
+    chunkIndexRef.current = 0;
 
     marioAudio.playPowerUp();
-    window.speechSynthesis.speak(utterance);
     setIsSpeaking(true);
+    setIsPaused(false);
+    speakChunkAtIndex(0);
   };
 
   const handleStopSpeech = () => {
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      setIsSpeaking(false);
-      setIsPaused(false);
-      marioAudio.playPipe();
-    }
+    stopAllSpeech();
+    marioAudio.playPipe();
   };
 
   const handleSpeedSelect = (speed: number) => {
@@ -402,9 +481,15 @@ export const TopicCard: React.FC<TopicCardProps> = ({
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-amber-400 text-slate-950 text-[11px] font-black uppercase font-mario tracking-wider border border-black shadow-[0_1px_0_#000] leading-none">
-                {topic.badge}
-              </span>
+              {showLegalCitations ? (
+                <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-amber-400 text-slate-950 text-[11px] font-black uppercase font-mario tracking-wider border border-black shadow-[0_1px_0_#000] leading-none">
+                  {topic.badge}
+                </span>
+              ) : (
+                <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-slate-700 text-amber-200 text-[11px] font-black uppercase font-mario tracking-wider border border-slate-600 leading-none">
+                  STATUTORY STANDARD
+                </span>
+              )}
               <span className="text-[11px] font-bold text-slate-400 uppercase font-mono">
                 {complexityMode === 'beginner' ? 'Mushroom Kingdom Mode' : 'Bowser Castle Codified'}
               </span>

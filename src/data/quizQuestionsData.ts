@@ -1,7 +1,7 @@
 export interface QuizQuestion {
   id: number;
   world: string;
-  worldCode: 'w1' | 'w2' | 'w3' | 'w4' | 'w5' | 'holidays';
+  worldCode: 'w1' | 'w2' | 'w3' | 'w4' | 'w5' | 'w6' | 'holidays';
   scenario: string;
   options: string[];
   correctIndex: number;
@@ -1590,5 +1590,431 @@ export const BOWSER_BOSS_QUESTIONS: QuizQuestion[] = [
     correctIndex: 1,
     explanation: 'Monthly-paid employees paid for all days of the year (365 factor) already have 100% of regular holidays built into their monthly salary; working on a regular holiday adds +100% (total 200%).',
     legalBasis: 'Insular Bank of Asia & America Employees’ Union v. Inciong',
+  },
+  // ================= WORLD 6: STATUTORY LEAVES & WELFARE (25 Questions) =================
+  {
+    id: 131,
+    world: 'World 6: Statutory Leaves',
+    worldCode: 'w6',
+    scenario:
+      'Pedro has completed 12 months of service with Bowser Mining. He has not taken any leave during the year. How many days of Service Incentive Leave (SIL) is he entitled to, and what happens if unused by year end?',
+    options: [
+      '5 days; if unused, it is forfeited to company operational funds.',
+      '5 days; unused SIL must be converted to cash at the end of the year based on his salary rate at conversion.',
+      '15 days; convertible to cash only upon resignation.',
+      '10 days; half converted to cash and half carried over.',
+    ],
+    correctIndex: 1,
+    explanation:
+      'Every employee who has rendered at least 1 year of service is entitled to 5 days yearly SIL with pay, and unused SIL at year-end must be converted to cash.',
+    legalBasis: 'Article 95, Labor Code & Implementing Rules',
+  },
+  {
+    id: 132,
+    world: 'World 6: Statutory Leaves',
+    worldCode: 'w6',
+    scenario:
+      'Toad Bakery regularly employs only eight (8) bakers and staff. Toad demands 5 days of paid SIL from the owner. Is the bakery legally required to grant it?',
+    options: [
+      'Yes, SIL is mandatory for all private employers regardless of size.',
+      'No, establishments regularly employing fewer than ten (10) employees are legally exempt from the mandatory grant of SIL.',
+      'Yes, provided Toad has worked there for 3 years.',
+      'Only 3 days of SIL are required for small bakeries.',
+    ],
+    correctIndex: 1,
+    explanation:
+      'Establishments with less than 10 employees, as shown by evidence, are not legally bound to give the five days of SIL unless obliged by contract, policy, or practice.',
+    legalBasis: 'Article 95(b), Labor Code',
+  },
+  {
+    id: 133,
+    world: 'World 6: Statutory Leaves',
+    worldCode: 'w6',
+    scenario:
+      'An employer already provides all employees with seven (7) days of paid Vacation Leave (VL) annually under company policy. Can an employee demand an additional five (5) days of SIL under Art. 95?',
+    options: [
+      'Yes, SIL is statutory while VL is voluntary.',
+      'No, employees already enjoying vacation leave with pay of at least five (5) days are excluded from the coverage of statutory SIL.',
+      'Yes, but only 2 additional days.',
+      'Only if the union files a formal grievance.',
+    ],
+    correctIndex: 1,
+    explanation:
+      'Those enjoying vacation leave with pay of at least five (5) days are explicitly excluded from SIL entitlement as the statutory purpose is already satisfied.',
+    legalBasis: 'Article 95(b), Labor Code & Omnibus Rules',
+  },
+  {
+    id: 134,
+    world: 'World 6: Statutory Leaves',
+    worldCode: 'w6',
+    scenario:
+      'Under R.A. 11210 (105-Day Expanded Maternity Leave Law), how many days of paid maternity leave are granted to covered female workers for live childbirth, regardless of civil status or legitimacy of the child?',
+    options: [
+      '60 days',
+      '78 days',
+      '105 days with full pay',
+      '120 days standard',
+    ],
+    correctIndex: 2,
+    explanation:
+      'All covered female workers in government and private sectors, including informal economy, regardless of civil status or legitimacy, shall be granted 105 days maternity leave with full pay.',
+    legalBasis: 'Section 3, Republic Act No. 11210',
+  },
+  {
+    id: 135,
+    world: 'World 6: Statutory Leaves',
+    worldCode: 'w6',
+    scenario:
+      'Princess Peach experiences an unfortunate miscarriage at 4 months of pregnancy. How many days of paid maternity leave is she legally entitled to receive under R.A. 11210?',
+    options: [
+      '30 days with full pay.',
+      '45 days with half pay.',
+      '60 days maternity leave with full pay.',
+      '105 days with full pay.',
+    ],
+    correctIndex: 2,
+    explanation:
+      'For cases of miscarriage or emergency termination of pregnancy, sixty (60) days maternity leave with full pay shall be granted.',
+    legalBasis: 'Section 3, Republic Act No. 11210',
+  },
+  {
+    id: 136,
+    world: 'World 6: Statutory Leaves',
+    worldCode: 'w6',
+    scenario:
+      'Daisy is a certified solo parent under R.A. 8972 / R.A. 11861 who gives birth to a baby girl. How many total days of paid maternity leave does she receive under R.A. 11210?',
+    options: [
+      '105 days',
+      '115 days',
+      '120 days (105 days standard + 15 days additional solo parent benefit)',
+      '135 days',
+    ],
+    correctIndex: 2,
+    explanation:
+      'In case the female employee qualifies as a solo parent under R.A. 8972 / R.A. 11861, she shall be paid an additional maternity benefit of fifteen (15) days, totaling 120 days with full pay.',
+    legalBasis: 'Section 3, Republic Act No. 11210',
+  },
+  {
+    id: 137,
+    world: 'World 6: Statutory Leaves',
+    worldCode: 'w6',
+    scenario:
+      'Can an expectant mother choose to defer her 105-day maternity leave until 6 months after childbirth so she can use it during her child’s first birthday?',
+    options: [
+      'Yes, with employer consent.',
+      'No. Enjoyment of maternity leave cannot be deferred; it must be availed of either before or after actual delivery in a continuous and uninterrupted manner.',
+      'Yes, under the Civil Code freedom of contract.',
+      'Only the postnatal 60 days can be deferred.',
+    ],
+    correctIndex: 1,
+    explanation:
+      'Enjoyment of maternity leave cannot be deferred but should be availed of either before or after the actual period of delivery in a continuous and uninterrupted manner.',
+    legalBasis: 'Section 3, R.A. 11210 & IRR Section 5',
+  },
+  {
+    id: 138,
+    world: 'World 6: Statutory Leaves',
+    worldCode: 'w6',
+    scenario:
+      'A female worker giving birth wishes to allocate a portion of her 105-day maternity leave benefits to the child’s father. How many days may she allocate, and does the law require that they be legally married?',
+    options: [
+      'Up to 15 days, but only if legally married.',
+      'Up to 7 days of said benefits to the child’s father, whether or not the same is married to the female worker.',
+      'Up to 30 days upon mutual agreement.',
+      'Zero days; leave is strictly non-transferable.',
+    ],
+    correctIndex: 1,
+    explanation:
+      'Any female worker entitled to maternity leave may, at her option, allocate up to seven (7) days of said benefits to the child’s father, whether or not married to the female worker.',
+    legalBasis: 'Section 6, Republic Act No. 11210',
+  },
+  {
+    id: 139,
+    world: 'World 6: Statutory Leaves',
+    worldCode: 'w6',
+    scenario:
+      'If the father of the child is absent, deceased, or incapacitated, to whom may the mother allocate her 7 days of maternity leave benefits?',
+    options: [
+      'Only to an SSS accredited social worker.',
+      'To an alternate caregiver who may be a relative within the 4th degree of consanguinity or current partner sharing the same household.',
+      'The 7 days are permanently forfeited.',
+      'To her department supervisor.',
+    ],
+    correctIndex: 1,
+    explanation:
+      'In the death, absence, or incapacity of the father, the benefit may be allocated to an alternate caregiver: a relative within the 4th degree of consanguinity or current partner sharing the same household.',
+    legalBasis: 'Section 6, Republic Act No. 11210',
+  },
+  {
+    id: 140,
+    world: 'World 6: Statutory Leaves',
+    worldCode: 'w6',
+    scenario:
+      'A female worker was terminated from employment due to authorized retrenchment. Ten (10) calendar days after termination, she gave birth. Is she still entitled to maternity leave with full pay from her employer?',
+    options: [
+      'No, because employment relationship already ended.',
+      'Yes, maternity leave with full pay shall be granted even if childbirth occurs not more than 15 calendar days after termination of service, as her right thereto has already accrued.',
+      'Only 50% from the previous employer and 50% from SSS.',
+      'Only if she had filed notice 6 months earlier.',
+    ],
+    correctIndex: 1,
+    explanation:
+      'Maternity leave with full pay shall be granted even if childbirth/miscarriage occurs not more than fifteen (15) calendar days after termination of service, as her right has already accrued.',
+    legalBasis: 'Section 10, Republic Act No. 11210',
+  },
+  {
+    id: 141,
+    world: 'World 6: Statutory Leaves',
+    worldCode: 'w6',
+    scenario:
+      'An employer illegally terminates a pregnant employee without just cause to evade maternity payments. What is the employer required to pay regarding maternity leave?',
+    options: [
+      'Nothing; SSS will absorb the entire liability.',
+      'Full salary for 105 days for childbirth (or 60 days for miscarriage) based on her full pay, plus other applicable daily cash benefits, as if employment was not illegally terminated.',
+      'Double the 13th month pay only.',
+      'A flat penalty of ₱10,000 to DOLE.',
+    ],
+    correctIndex: 1,
+    explanation:
+      'When employment is terminated without just cause, the 15-day limit does not apply and the employer must pay the full salary for 105 days (or 60 days for miscarriage) based on full pay plus daily cash benefits.',
+    legalBasis: 'Section 10, Republic Act No. 11210',
+  },
+  {
+    id: 142,
+    world: 'World 6: Statutory Leaves',
+    worldCode: 'w6',
+    scenario:
+      'Mario is legally married to Peach and cohabiting with her. Peach gives birth to their 5th child. Can Mario claim 7 days of statutory Paternity Leave under R.A. 8187?',
+    options: [
+      'Yes, paternity leave applies to all deliveries without limit.',
+      'No. Statutory paternity leave under R.A. 8187 applies only to the first four (4) deliveries of the legitimate spouse with whom he is cohabiting.',
+      'Yes, but with 50% pay deduction.',
+      'Yes, provided he obtains a DOLE waiver.',
+    ],
+    correctIndex: 1,
+    explanation:
+      'Every married male employee is entitled to paternity leave of 7 days with full pay for the first four (4) deliveries of his legitimate cohabiting spouse.',
+    legalBasis: 'Section 2, Republic Act No. 8187',
+  },
+  {
+    id: 143,
+    world: 'World 6: Statutory Leaves',
+    worldCode: 'w6',
+    scenario:
+      'Luigi lives with his live-in common-law partner of 8 years who gives birth to their child. Luigi applies for Paternity Leave under R.A. 8187. Does he qualify?',
+    options: [
+      'Yes, common-law partnerships are fully recognized for paternity leave.',
+      'No. A mandatory condition for entitlement under R.A. 8187 is that he is legally married to the pregnant woman (legitimate spouse).',
+      'Yes, if they have at least 2 children.',
+      'Yes, under the Magna Carta for Men.',
+    ],
+    correctIndex: 1,
+    explanation:
+      'R.A. 8187 expressly requires that the male employee is married to the spouse giving birth. (Note: He could receive up to 7 days allocated from the mother under R.A. 11210, but cannot claim R.A. 8187 paternity leave).',
+    legalBasis: 'Section 2 & 3, Republic Act No. 8187',
+  },
+  {
+    id: 144,
+    world: 'World 6: Statutory Leaves',
+    worldCode: 'w6',
+    scenario:
+      'A male employee fails to avail of his 7-day paternity leave after his wife’s delivery. At the end of the calendar year, he demands that the company convert the 7 unused paternity days to cash. Is his claim valid?',
+    options: [
+      'Yes, all unused statutory leaves are convertible to cash.',
+      'No, paternity leave is non-cumulative and strictly non-convertible to cash if unavailed.',
+      'Yes, if backed by an affidavit of cohabitation.',
+      'Only 50% cash conversion is allowed.',
+    ],
+    correctIndex: 1,
+    explanation:
+      'Paternity leave cannot be commuted to cash and is not cumulative; if not availed of within the delivery period, it is forfeited.',
+    legalBasis: 'R.A. 8187 Implementing Rules, Sec. 7',
+  },
+  {
+    id: 145,
+    world: 'World 6: Statutory Leaves',
+    worldCode: 'w6',
+    scenario:
+      'How many working days of paid parental leave are granted to qualified Solo Parent employees every year under R.A. 8972 / R.A. 11861, and what service duration is required?',
+    options: [
+      '5 working days with pay; 1 year of service required.',
+      '7 working days with pay; service of at least six (6) months required.',
+      '10 working days with pay; 2 years of service required.',
+      '15 working days with pay; immediate from Day 1.',
+    ],
+    correctIndex: 1,
+    explanation:
+      'A forfeitable and noncumulative parental leave of not more than seven (7) working days with pay every year shall be granted to any solo parent employee who has rendered service of at least 6 months.',
+    legalBasis: 'Section 8, R.A. 8972 as amended by R.A. 11861',
+  },
+  {
+    id: 146,
+    world: 'World 6: Statutory Leaves',
+    worldCode: 'w6',
+    scenario:
+      'Under the Expanded Solo Parents Welfare Act (R.A. 11861), which of the following is considered a qualified Solo Parent?',
+    options: [
+      'A mother whose spouse has been detained for criminal conviction or awaiting trial for at least three (3) months.',
+      'An unmarried mother or father who keeps and rears the child.',
+      'A parent whose spouse abandoned the family for at least six (6) months.',
+      'All of the above are recognized solo parents under the law.',
+    ],
+    correctIndex: 3,
+    explanation:
+      'The Expanded Solo Parents Welfare Act recognizes detention of spouse for at least 3 months, abandonment for at least 6 months, and unmarried parents rearing children as solo parents.',
+    legalBasis: 'Section 3, Republic Act No. 11861',
+  },
+  {
+    id: 147,
+    world: 'World 6: Statutory Leaves',
+    worldCode: 'w6',
+    scenario:
+      'A low-skilled OFW father has been working abroad in the Middle East for 14 continuous months. Does his spouse in the Philippines qualify as a Solo Parent for welfare benefits?',
+    options: [
+      'No, because the husband is still alive and earning.',
+      'Yes, the spouse of a low/semi-skilled OFW who is away from the Philippines for an uninterrupted period of twelve (12) months qualifies as a solo parent.',
+      'Only if the OFW ceases sending remittances.',
+      'Only if the wife is also unemployed.',
+    ],
+    correctIndex: 1,
+    explanation:
+      'Under R.A. 11861, the spouse or family member/guardian of a low/semi-skilled OFW away for an uninterrupted period of 12 months is explicitly categorized as a solo parent.',
+    legalBasis: 'Section 3(b), Republic Act No. 11861',
+  },
+  {
+    id: 148,
+    world: 'World 6: Statutory Leaves',
+    worldCode: 'w6',
+    scenario:
+      'An unwed mother rearing her 4-year-old child receives occasional birthday gifts and seasonal Christmas gifts from the child’s biological father, but no regular support. Does she lose her Solo Parent status?',
+    options: [
+      'Yes, any gift from the other parent terminates solo parent status.',
+      'No. A solo parent does NOT lose status if the other parent provides occasional assistance or seasonal gifts that do not meet the legal requirement of support under the Family Code.',
+      'She is suspended for 6 months.',
+      'Only if the gifts exceed ₱5,000.',
+    ],
+    correctIndex: 1,
+    explanation:
+      'Occasional assistance and seasonal gifts that do not meet the legal standard of formal support under the Family Code do not disqualify the parent from solo parent status.',
+    legalBasis: 'Section 5, R.A. 11861 IRR',
+  },
+  {
+    id: 149,
+    world: 'World 6: Statutory Leaves',
+    worldCode: 'w6',
+    scenario:
+      'Under R.A. 11861, up to what age are dependent children covered for a solo parent to claim statutory benefits and educational scholarships?',
+    options: [
+      '18 years old only.',
+      '21 years old.',
+      'Twenty-two (22) years of age or below (dependent, unmarried, and unemployed).',
+      '25 years old.',
+    ],
+    correctIndex: 2,
+    explanation:
+      'R.A. 11861 raised the age threshold of dependent children to twenty-two (22) years of age or below, provided they are unmarried and unemployed.',
+    legalBasis: 'Section 3, Republic Act No. 11861',
+  },
+  {
+    id: 150,
+    world: 'World 6: Statutory Leaves',
+    worldCode: 'w6',
+    scenario:
+      'Under the Magna Carta of Women (R.A. 9710), a female worker who undergoes surgical operation for a gynecological disorder is entitled to Special Leave. What are the service and duration requirements?',
+    options: [
+      '1 year service; 1 month leave with half pay.',
+      'At least six (6) months continuous aggregate service in the last 12 months; special leave of up to two (2) months with full pay based on gross monthly compensation.',
+      '3 months service; 15 days leave with pay.',
+      '6 months service; 105 days leave with pay.',
+    ],
+    correctIndex: 1,
+    explanation:
+      'A woman employee who has rendered at least 6 months continuous aggregate service in the last 12 months is entitled to 2 months special leave with full pay based on gross monthly compensation following surgery caused by gynecological disorders.',
+    legalBasis: 'Section 18, Republic Act No. 9710',
+  },
+  {
+    id: 151,
+    world: 'World 6: Statutory Leaves',
+    worldCode: 'w6',
+    scenario:
+      'A female employee undergoes non-surgical hormonal therapy and outpatient checkups for ovarian cysts. Does she qualify for the 2-month Magna Carta Gynecological Leave?',
+    options: [
+      'Yes, any gynecological condition entitles the employee to 2 months leave.',
+      'No. The special leave under R.A. 9710 strictly requires surgical procedures caused by gynecological disorders; non-surgical medical management does not qualify.',
+      'Yes, if she has 5 years of service.',
+      'She receives 1 month only.',
+    ],
+    correctIndex: 1,
+    explanation:
+      'The law explicitly requires that the leave follows surgery caused by gynecological disorders requiring surgical procedures.',
+    legalBasis: 'Section 18, R.A. 9710 & DOLE Guidelines',
+  },
+  {
+    id: 152,
+    world: 'World 6: Statutory Leaves',
+    worldCode: 'w6',
+    scenario:
+      'Under the Anti-Violence Against Women and Their Children Act (R.A. 9262), how many days of paid leave are granted to female victims of VAWC, and can it be extended?',
+    options: [
+      '5 days, non-extendible.',
+      'Up to ten (10) days with pay, extendible when necessity arises as specified in the protection order (BPO, TPO, or PPO).',
+      '15 days with half pay.',
+      '30 days with full pay.',
+    ],
+    correctIndex: 1,
+    explanation:
+      'VAWC victims are entitled to take a paid leave of absence up to 10 days in addition to other paid leaves, extendible when the necessity arises as specified in the protection order.',
+    legalBasis: 'Section 43, Republic Act No. 9262',
+  },
+  {
+    id: 153,
+    world: 'World 6: Statutory Leaves',
+    worldCode: 'w6',
+    scenario:
+      'An employer refuses to grant VAWC leave to an employee who presented a Barangay Protection Order (BPO), claiming "it is purely a private domestic issue." Is the employer liable?',
+    options: [
+      'No, the employer has management prerogative over attendance.',
+      'Yes! Employer prejudice or refusal to honor VAWC leave is prohibited under R.A. 9262 and constitutes an actionable offense punishable by law.',
+      'Only if the husband is also an employee of the firm.',
+      'Only if the BPO was issued by a regional trial court.',
+    ],
+    correctIndex: 1,
+    explanation:
+      'Refusal to grant the 10-day paid leave or discriminating against an employee on account of being a VAWC victim is strictly prohibited and penalizes the employer.',
+    legalBasis: 'Section 43, Republic Act No. 9262',
+  },
+  {
+    id: 154,
+    world: 'World 6: Statutory Leaves',
+    worldCode: 'w6',
+    scenario:
+      'What is the prescriptive period for an employee to claim unpaid cash conversion of accumulated Service Incentive Leave (SIL)?',
+    options: [
+      'Strictly 1 year from the end of the calendar year.',
+      'The 3-year prescriptive period under Art. 306 begins to run only from the time the employer refuses to pay upon demand, or upon separation of the employee from employment.',
+      '10 years under the Civil Code on written contracts.',
+      'Never prescribes.',
+    ],
+    correctIndex: 1,
+    explanation:
+      'In Auto Bus Transport Systems v. Bautista, the Supreme Court ruled that the 3-year prescriptive period for SIL conversion begins only upon termination of employment or upon refusal of the employer upon demand.',
+    legalBasis: 'Auto Bus Transport Systems v. Bautista, G.R. No. 156367',
+  },
+  {
+    id: 155,
+    world: 'World 6: Statutory Leaves',
+    worldCode: 'w6',
+    scenario:
+      'Are government employees in the civil service and military personnel entitled to the statutory Service Incentive Leave under Article 95 of the Labor Code?',
+    options: [
+      'Yes, all Philippine workers are covered by Article 95.',
+      'No, government employees and those governed by Civil Service rules are excluded from Title I, Book III of the Labor Code, having their own distinct Civil Service leave system.',
+      'Only contractual government employees.',
+      'Only local government unit (LGU) employees.',
+    ],
+    correctIndex: 1,
+    explanation:
+      'Government employees are excluded from the Labor Code provisions on hours of work and SIL under Article 82 and Article 95, as they are governed by Civil Service laws.',
+    legalBasis: 'Article 82 & 95, Labor Code',
   },
 ];

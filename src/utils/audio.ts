@@ -1,10 +1,83 @@
-// Web Audio API Retro 8-bit Synthesizer with Configurable Super Mario Soundscapes & SFX
-
 import { MarioSoundscapeId } from './engagementFeatures';
+import { SoundPackId } from '../types/laborLaw';
 
 export type TabSfxType = 'pipe' | 'jump' | 'coin' | 'stomp';
 export type CardSfxType = 'powerup' | 'coin' | 'fireball' | 'oneup';
 export type QuizSfxType = 'fanfare' | 'star' | 'oneup';
+
+export interface SoundPackInfo {
+  id: SoundPackId;
+  name: string;
+  badge: string;
+  era: string;
+  description: string;
+  defaultPrice: number;
+  previewTone: string;
+  leadWave: OscillatorType;
+}
+
+export const SOUND_PACK_DEFINITIONS: SoundPackInfo[] = [
+  {
+    id: 'sound_default',
+    name: 'Mushroom Kingdom Classic',
+    badge: 'Classic 8-Bit',
+    era: '1985 Arcade',
+    description: 'Iconic Mario chiptune tones with balanced square waves and snappy arpeggios.',
+    defaultPrice: 0,
+    previewTone: 'Classic Coin & Jump',
+    leadWave: 'square',
+  },
+  {
+    id: 'sound_nes_8bit',
+    name: 'NES 8-Bit Chiptune Pack',
+    badge: 'NES 1985',
+    era: '8-Bit Console',
+    description: 'Crisp square-wave and triangle-wave sound effects inspired by the 1985 NES original.',
+    defaultPrice: 30,
+    previewTone: 'Crisp Pulse Waves',
+    leadWave: 'square',
+  },
+  {
+    id: 'sound_snes_16bit',
+    name: 'SNES 16-Bit Super Chime',
+    badge: 'SNES 1990',
+    era: '16-Bit Super',
+    description: 'Rich stereo brass, crystal bell overtones, and dual-oscillator warmth from Super Mario World.',
+    defaultPrice: 45,
+    previewTone: 'Stereo Harmonic Sparkle',
+    leadWave: 'triangle',
+  },
+  {
+    id: 'sound_zen_lofi',
+    name: 'Zen Lofi Study Chimes',
+    badge: 'Zen Study',
+    era: 'Acoustic Calm',
+    description: 'Gentle pure-sine kalimba tones and warm mellow resonance for soothing deep-focus Bar review sessions.',
+    defaultPrice: 50,
+    previewTone: 'Warm Kalimba Bell',
+    leadWave: 'sine',
+  },
+  {
+    id: 'sound_galaxy_synth',
+    name: 'Cosmic Galaxy Synth Pack',
+    badge: 'Galaxy 2007',
+    era: 'Cosmic Spatial',
+    description: 'Ethereal star arpeggios, shimmering space harmonics, and celestial chime cascades.',
+    defaultPrice: 60,
+    previewTone: 'Starlight Arpeggio',
+    leadWave: 'sine',
+  },
+  {
+    id: 'sound_bowser_metal',
+    name: 'Bowser Lava Rock Overdrive',
+    badge: 'Magma Rock',
+    era: 'Fiery Heavy Metal',
+    description: 'Boiling sawtooth distortion, crunchy sub-bass power, and intense courtroom boss energy.',
+    defaultPrice: 65,
+    previewTone: 'Sawtooth Power Riff',
+    leadWave: 'sawtooth',
+  },
+];
 
 export interface SoundToggles {
   jump: boolean;
@@ -22,6 +95,7 @@ export interface AudioSettings {
   sfxEnabled: boolean; // Sound effects toggle
   musicEnabled: boolean; // Retro BGM chiptune music toggle (Pause/Resume)
   soundscape: MarioSoundscapeId; // Overworld | Underground | Castle | Star Road
+  soundPack: SoundPackId; // Equipped Audio Pack
   volume: number; // 0.0 to 1.0 (SFX volume)
   musicVolume: number; // 0.0 to 1.0 (Music volume)
   tabSfx: TabSfxType;
@@ -35,6 +109,7 @@ export const DEFAULT_AUDIO_SETTINGS: AudioSettings = {
   sfxEnabled: true,
   musicEnabled: false,
   soundscape: 'overworld',
+  soundPack: 'sound_default',
   volume: 0.8,
   musicVolume: 0.42,
   tabSfx: 'pipe',
@@ -203,17 +278,21 @@ class MarioAudioEngine {
     if (typeof window !== 'undefined') {
       try {
         const saved = localStorage.getItem('mario_audio_settings');
+        const legacyPack = localStorage.getItem('mario_active_soundpack');
         if (saved) {
           const parsed = JSON.parse(saved);
           this.settings = {
             ...DEFAULT_AUDIO_SETTINGS,
             ...parsed,
             soundscape: parsed.soundscape || 'overworld',
+            soundPack: (parsed.soundPack || legacyPack || 'sound_default') as SoundPackId,
             soundToggles: {
               ...DEFAULT_AUDIO_SETTINGS.soundToggles,
               ...(parsed.soundToggles || {}),
             },
           };
+        } else if (legacyPack) {
+          this.settings.soundPack = legacyPack as SoundPackId;
         }
       } catch {
         this.settings = { ...DEFAULT_AUDIO_SETTINGS };
@@ -225,6 +304,9 @@ class MarioAudioEngine {
     if (typeof window !== 'undefined') {
       try {
         localStorage.setItem('mario_audio_settings', JSON.stringify(this.settings));
+        if (this.settings.soundPack) {
+          localStorage.setItem('mario_active_soundpack', this.settings.soundPack);
+        }
       } catch {
         // storage fallback
       }
@@ -253,6 +335,141 @@ class MarioAudioEngine {
     }
 
     this.notifyListeners();
+  }
+
+  // Set & Equip Audio Pack from Store or Audio Settings
+  public setSoundPack(packId: SoundPackId, playDemo: boolean = true) {
+    this.updateSettings({ soundPack: packId });
+    if (playDemo && this.settings.enabled && this.settings.sfxEnabled) {
+      this.previewSoundPack(packId);
+    }
+  }
+
+  // Interactive sample/preview for any audio pack
+  public previewSoundPack(packId: SoundPackId) {
+    if (!this.settings.enabled) return;
+    try {
+      this.initCtx();
+      if (!this.ctx) return;
+      const now = this.ctx.currentTime;
+      const master = this.getMasterGain(now, 0.32);
+      if (!master) return;
+
+      switch (packId) {
+        case 'sound_zen_lofi': {
+          // Soothing kalimba chime arpeggio: D5 -> G5 -> B5 -> D6
+          const notes = [587.33, 783.99, 987.77, 1174.66];
+          notes.forEach((f, i) => {
+            const osc = this.ctx!.createOscillator();
+            const gain = this.ctx!.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(f, now + i * 0.09);
+            gain.gain.setValueAtTime(0.01, now + i * 0.09);
+            gain.gain.linearRampToValueAtTime(0.75, now + i * 0.09 + 0.03);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.09 + 0.45);
+            osc.connect(gain);
+            gain.connect(master);
+            osc.start(now + i * 0.09);
+            osc.stop(now + i * 0.09 + 0.45);
+          });
+          break;
+        }
+        case 'sound_snes_16bit': {
+          // Warm SNES 16-bit multi-voice brass chime
+          const chordNotes = [
+            { f: 523.25, d: 0.1 },
+            { f: 659.25, d: 0.1 },
+            { f: 783.99, d: 0.1 },
+            { f: 1046.5, d: 0.32 },
+          ];
+          let offset = 0;
+          chordNotes.forEach((step) => {
+            const osc1 = this.ctx!.createOscillator();
+            const osc2 = this.ctx!.createOscillator();
+            const gain = this.ctx!.createGain();
+            osc1.type = 'triangle';
+            osc2.type = 'sine';
+            osc1.frequency.setValueAtTime(step.f, now + offset);
+            osc2.frequency.setValueAtTime(step.f * 1.004, now + offset); // stereo shimmer
+            gain.gain.setValueAtTime(0.85, now + offset);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + offset + step.d);
+            osc1.connect(gain);
+            osc2.connect(gain);
+            gain.connect(master);
+            osc1.start(now + offset);
+            osc2.start(now + offset);
+            osc1.stop(now + offset + step.d);
+            osc2.stop(now + offset + step.d);
+            offset += step.d * 0.88;
+          });
+          break;
+        }
+        case 'sound_galaxy_synth': {
+          // Ethereal crystalline space arpeggio
+          const galaxyNotes = [659.25, 880.0, 1174.66, 1318.51, 1760.0];
+          galaxyNotes.forEach((f, i) => {
+            const osc = this.ctx!.createOscillator();
+            const gain = this.ctx!.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(f, now + i * 0.065);
+            gain.gain.setValueAtTime(0.7, now + i * 0.065);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.065 + 0.38);
+            osc.connect(gain);
+            gain.connect(master);
+            osc.start(now + i * 0.065);
+            osc.stop(now + i * 0.065 + 0.38);
+          });
+          break;
+        }
+        case 'sound_bowser_metal': {
+          // Heavy rock crunchy power riff
+          const riffNotes = [146.83, 220.0, 293.66, 440.0];
+          riffNotes.forEach((f, i) => {
+            const osc = this.ctx!.createOscillator();
+            const sub = this.ctx!.createOscillator();
+            const gain = this.ctx!.createGain();
+            osc.type = 'sawtooth';
+            sub.type = 'triangle';
+            osc.frequency.setValueAtTime(f, now + i * 0.06);
+            sub.frequency.setValueAtTime(f / 2, now + i * 0.06);
+            gain.gain.setValueAtTime(0.8, now + i * 0.06);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.06 + 0.28);
+            osc.connect(gain);
+            sub.connect(gain);
+            gain.connect(master);
+            osc.start(now + i * 0.06);
+            sub.start(now + i * 0.06);
+            osc.stop(now + i * 0.06 + 0.28);
+            sub.stop(now + i * 0.06 + 0.28);
+          });
+          break;
+        }
+        case 'sound_nes_8bit': {
+          // Pure 1985 NES 8-bit square pulse arpeggio
+          const nesNotes = [261.63, 329.63, 392.0, 523.25, 659.25];
+          nesNotes.forEach((f, i) => {
+            const osc = this.ctx!.createOscillator();
+            const gain = this.ctx!.createGain();
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(f, now + i * 0.06);
+            gain.gain.setValueAtTime(0.8, now + i * 0.06);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.06 + 0.16);
+            osc.connect(gain);
+            gain.connect(master);
+            osc.start(now + i * 0.06);
+            osc.stop(now + i * 0.06 + 0.16);
+          });
+          break;
+        }
+        case 'sound_default':
+        default: {
+          this.playPowerUp();
+          break;
+        }
+      }
+    } catch {
+      // fallback
+    }
   }
 
   // Toggle background music directly from Navbar (Pause / Resume)
@@ -376,7 +593,7 @@ class MarioAudioEngine {
     }
   }
 
-  // Classic Mario Coin sound: B5 (987.77 Hz) to E6 (1318.51 Hz)
+  // Classic Mario Coin sound shaped by active Audio Pack timbre
   playCoin() {
     if (
       !this.settings.enabled ||
@@ -391,19 +608,91 @@ class MarioAudioEngine {
       const master = this.getMasterGain(now, 0.3);
       if (!master) return;
 
+      const pack = this.settings.soundPack || 'sound_default';
+
+      if (pack === 'sound_zen_lofi') {
+        const osc = this.ctx.createOscillator();
+        const noteGain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, now);
+        osc.frequency.exponentialRampToValueAtTime(1174.66, now + 0.1);
+        noteGain.gain.setValueAtTime(0.01, now);
+        noteGain.gain.linearRampToValueAtTime(0.75, now + 0.03);
+        noteGain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+        osc.connect(noteGain);
+        noteGain.connect(master);
+        osc.start(now);
+        osc.stop(now + 0.5);
+        return;
+      }
+
+      if (pack === 'sound_snes_16bit') {
+        [987.77, 1318.51, 1975.53].forEach((f, idx) => {
+          const osc = this.ctx!.createOscillator();
+          const noteGain = this.ctx!.createGain();
+          osc.type = idx === 2 ? 'sine' : 'triangle';
+          osc.frequency.setValueAtTime(f, now + idx * 0.035);
+          noteGain.gain.setValueAtTime(0.65, now + idx * 0.035);
+          noteGain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.035 + 0.42);
+          osc.connect(noteGain);
+          noteGain.connect(master);
+          osc.start(now + idx * 0.035);
+          osc.stop(now + idx * 0.035 + 0.42);
+        });
+        return;
+      }
+
+      if (pack === 'sound_galaxy_synth') {
+        [987.77, 1318.51, 1567.98, 2093.0].forEach((f, idx) => {
+          const osc = this.ctx!.createOscillator();
+          const noteGain = this.ctx!.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(f, now + idx * 0.03);
+          noteGain.gain.setValueAtTime(0.55, now + idx * 0.03);
+          noteGain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.03 + 0.45);
+          osc.connect(noteGain);
+          noteGain.connect(master);
+          osc.start(now + idx * 0.03);
+          osc.stop(now + idx * 0.03 + 0.45);
+        });
+        return;
+      }
+
+      if (pack === 'sound_bowser_metal') {
+        const osc = this.ctx.createOscillator();
+        const sub = this.ctx.createOscillator();
+        const noteGain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        sub.type = 'triangle';
+        osc.frequency.setValueAtTime(987.77, now);
+        osc.frequency.setValueAtTime(1318.51, now + 0.07);
+        sub.frequency.setValueAtTime(493.88, now);
+        sub.frequency.setValueAtTime(659.25, now + 0.07);
+        noteGain.gain.setValueAtTime(0.8, now);
+        noteGain.gain.exponentialRampToValueAtTime(0.001, now + 0.38);
+        osc.connect(noteGain);
+        sub.connect(noteGain);
+        noteGain.connect(master);
+        osc.start(now);
+        sub.start(now);
+        osc.stop(now + 0.38);
+        sub.stop(now + 0.38);
+        return;
+      }
+
+      // Classic & NES 8-bit
       const osc = this.ctx.createOscillator();
       const noteGain = this.ctx.createGain();
-
-      osc.type = 'sine';
+      osc.type = pack === 'sound_nes_8bit' ? 'square' : 'sine';
       osc.frequency.setValueAtTime(987.77, now);
       osc.frequency.setValueAtTime(1318.51, now + 0.08);
-
       noteGain.gain.setValueAtTime(1, now);
-      noteGain.gain.exponentialRampToValueAtTime(0.001, now + 0.42);
-
+      noteGain.gain.exponentialRampToValueAtTime(
+        0.001,
+        now + (pack === 'sound_nes_8bit' ? 0.32 : 0.42)
+      );
       osc.connect(noteGain);
       noteGain.connect(master);
-
       osc.start(now);
       osc.stop(now + 0.42);
     } catch {
@@ -1008,6 +1297,135 @@ class MarioAudioEngine {
         break;
     }
   }
+
+  // Restore previously purchased or missing audio packs into localStorage
+  restorePurchases(): SoundPackId[] {
+    const defaultPacks: SoundPackId[] = [
+      'sound_default',
+      'sound_nes_8bit',
+      'sound_snes_16bit',
+      'sound_zen_lofi',
+      'sound_galaxy_synth',
+      'sound_bowser_metal',
+    ];
+
+    if (typeof window !== 'undefined') {
+      try {
+        let existingUnlocked: string[] = [];
+        const raw = localStorage.getItem('mario_unlocked_items');
+        if (raw) {
+          existingUnlocked = JSON.parse(raw);
+        }
+        const merged = Array.from(new Set([...existingUnlocked, ...defaultPacks]));
+        localStorage.setItem('mario_unlocked_items', JSON.stringify(merged));
+
+        // Restore active soundpack if saved
+        const savedPack = localStorage.getItem('mario_active_soundpack') as SoundPackId;
+        if (savedPack && defaultPacks.includes(savedPack)) {
+          this.setSoundPack(savedPack, false);
+        } else {
+          this.setSoundPack('sound_default', false);
+        }
+      } catch {
+        // fallback
+      }
+    }
+
+    this.playPowerUp();
+    return defaultPacks;
+  }
+
+  // World-specific Ambient Theme Jingles (Worlds 1 to 6 & Holidays)
+  playWorldTheme(worldId: string) {
+    if (!this.settings.enabled || this.settings.sfxEnabled === false) return;
+    try {
+      this.initCtx();
+      if (!this.ctx) return;
+      const now = this.ctx.currentTime;
+      const master = this.getMasterGain(now, 0.26);
+      if (!master) return;
+
+      let notes: { f: number; d: number; wave?: OscillatorType }[] = [];
+
+      switch (worldId) {
+        case 'world2': // Donut Plains (Rest, Holidays, 13th Month) - Upbeat swinging brass
+          notes = [
+            { f: 349.23, d: 0.12, wave: 'triangle' }, // F4
+            { f: 440.0, d: 0.12, wave: 'triangle' },  // A4
+            { f: 523.25, d: 0.14, wave: 'square' },   // C5
+            { f: 587.33, d: 0.14, wave: 'square' },   // D5
+            { f: 659.25, d: 0.16, wave: 'triangle' }, // E5
+            { f: 783.99, d: 0.35, wave: 'square' },   // G5
+          ];
+          break;
+        case 'world3': // Vanilla Dome (Wages & Contracting) - Subterranean crystal resonance
+          notes = [
+            { f: 293.66, d: 0.14, wave: 'triangle' }, // D4
+            { f: 349.23, d: 0.14, wave: 'sine' },     // F4
+            { f: 440.0, d: 0.14, wave: 'triangle' },  // A4
+            { f: 523.25, d: 0.16, wave: 'sine' },     // C5
+            { f: 587.33, d: 0.38, wave: 'triangle' }, // D5
+          ];
+          break;
+        case 'world4': // Forest of Illusion (Special Groups) - Playful mystic woodland woodwind
+          notes = [
+            { f: 329.63, d: 0.12, wave: 'sine' },     // E4
+            { f: 415.3, d: 0.12, wave: 'sine' },      // G#4
+            { f: 493.88, d: 0.14, wave: 'triangle' }, // B4
+            { f: 659.25, d: 0.14, wave: 'sine' },     // E5
+            { f: 783.99, d: 0.32, wave: 'sine' },     // G5
+          ];
+          break;
+        case 'world5': // Bowser Castle (Protective Laws & Social Legislation) - Dramatic power march
+          notes = [
+            { f: 146.83, d: 0.14, wave: 'sawtooth' }, // D3
+            { f: 174.61, d: 0.14, wave: 'sawtooth' }, // F3
+            { f: 220.0, d: 0.16, wave: 'sawtooth' },  // A3
+            { f: 293.66, d: 0.18, wave: 'sawtooth' }, // D4
+            { f: 349.23, d: 0.36, wave: 'sawtooth' }, // F4
+          ];
+          break;
+        case 'world6': // Peach Castle (Statutory Leaves) - Celestial royal chime fanfare
+        case 'holidays':
+          notes = [
+            { f: 392.0, d: 0.12, wave: 'sine' },     // G4
+            { f: 493.88, d: 0.12, wave: 'sine' },    // B4
+            { f: 587.33, d: 0.14, wave: 'triangle' },// D5
+            { f: 783.99, d: 0.16, wave: 'sine' },    // G5
+            { f: 987.77, d: 0.36, wave: 'sine' },    // B5
+          ];
+          break;
+        case 'world1': // Yoshi Island (Hours of Work) - Classic upbeat overworld jingle
+        default:
+          notes = [
+            { f: 523.25, d: 0.1, wave: 'square' },   // C5
+            { f: 659.25, d: 0.1, wave: 'square' },   // E5
+            { f: 783.99, d: 0.14, wave: 'square' },  // G5
+            { f: 1046.5, d: 0.32, wave: 'square' },  // C6
+          ];
+          break;
+      }
+
+      let elapsed = 0;
+      notes.forEach((step) => {
+        const osc = this.ctx!.createOscillator();
+        const noteGain = this.ctx!.createGain();
+        osc.type = step.wave || 'triangle';
+        osc.frequency.setValueAtTime(step.f, now + elapsed);
+        noteGain.gain.setValueAtTime(0.85, now + elapsed);
+        noteGain.gain.exponentialRampToValueAtTime(0.01, now + elapsed + step.d);
+        osc.connect(noteGain);
+        noteGain.connect(master);
+        osc.start(now + elapsed);
+        osc.stop(now + elapsed + step.d);
+        elapsed += step.d * 0.92;
+      });
+    } catch {
+      // audio fallback
+    }
+  }
 }
 
 export const marioAudio = new MarioAudioEngine();
+export const AudioController = MarioAudioEngine;
+export const audioController = marioAudio;
